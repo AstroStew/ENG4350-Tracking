@@ -22,7 +22,7 @@ from scipy.spatial.transform import Rotation as R
     # In[]
 
 def refepoch_to_dt(refepoch):
-    Epochyrday = dt.datetime.strptime(refepoch[:4],'%y%j')
+    Epochyrday = dt.datetime.strptime((refepoch[:4]),'%y%j')
     dfrac = np.modf(np.float(refepoch))[0]
     dfracdt = dt.timedelta(microseconds=np.int(dfrac*24*3600*10**6))
     Epochdt = Epochyrday + dfracdt
@@ -55,7 +55,6 @@ def referenceepoch_propagate(TrackingData):
         doystring=str(doy(time.year,time.month,time.day))
         dayfracstring=str((time.microsecond/8.6e+10)+(time.second/86400)+ \
                           (time.minute/1440)+(time.hour/24))[0:10]
-        print(yearstring,"\n",doystring,"\n",dayfracstring)
         time=time+dt.timedelta(seconds=float(TrackingData.timestep))
         if len(doystring)==3:
             resultstring=yearstring+doystring+dayfracstring
@@ -78,39 +77,38 @@ def referenceepoch_propagate(TrackingData):
 def THETAN_2(refepoch):
     #Input is a refepoch array this dsoesn't make sense as Tracking Data contains an easily parsible 
     start_time_dt=refepoch_to_dt(refepoch[0])
-    times=refepoch_to_dt(refepoch)
     
-    
+    GMST_list=[]
     
     J2000=dt.datetime.strptime('2000-01-01 12:00:00','%Y-%m-%d %H:%M:%S')
-    
-    #Finds Start time and variable t
-    t=times-J2000
-    
-    #Creates T mid for Observation Day
+    for i in range(0,len(refepoch)):
+        times=(refepoch_to_dt(refepoch[i]))
+        t=times-J2000
+        #Creates T mid for Observation Day
         #Notice how we replace hour,min and sec to 0. This makes the time midnight!
-    t_mid_dt=start_time_dt
-    t_mid_dt=t_mid_dt.replace(hour=0,minute=0,second=0)
+        t_mid_dt=start_time_dt
+        t_mid_dt=t_mid_dt.replace(hour=0,minute=0,second=0)
     
     
     
     
     
-    t_mid=t_mid_dt-J2000
-    D_u=(t_mid_dt-J2000).days #The number of days since J2000 to t_mid
+        t_mid=t_mid_dt-J2000
+        D_u=(t_mid_dt-J2000).days #The number of days since J2000 to t_mid
     
-    T_u=D_u/36525
-    GMST_00=99.9677947+36000.77006361*T_u+0.00038793*(T_u**2)-(2.6*10**-8)*T_u**3
+        T_u=D_u/36525
+        GMST_00=99.9677947+36000.77006361*T_u+0.00038793*(T_u**2)-(2.6*10**-8)*T_u**3
     #Unit: Seconds, will reduce later
     #Note: degrees seconds
     
-    r=1.002737909350795+5.9006*10**-11*T_u-(5.9*10**-15)*T_u**2
+        r=1.002737909350795+5.9006*10**-11*T_u-(5.9*10**-15)*T_u**2
     
-    delta_seconds=(t-t_mid).total_seconds()
-    GMST_t=(GMST_00+(360*r*(delta_seconds)))%360
-    
+        delta_seconds=(t-t_mid).total_seconds()
+        GMST_t=(GMST_00+(360*r*(delta_seconds)))%360
         
-    return GMST_t    
+        GMST_list.append(GMST_t)
+        
+    return GMST_list    
  # In[]
 
 def THETAN(refepoch,time_start_dt,time):
