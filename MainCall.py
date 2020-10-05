@@ -74,7 +74,7 @@ def referenceepoch_propagate(TrackingData):
     return refepoch_list
     
     # In[]
-def THETAN_2(refepoch):
+def THETAN(refepoch):
     #Input is a refepoch array this dsoesn't make sense as Tracking Data contains an easily parsible 
     start_time_dt=refepoch_to_dt(refepoch[0])
     
@@ -109,83 +109,6 @@ def THETAN_2(refepoch):
         GMST_list.append(GMST_t)
         
     return GMST_list    
- # In[]
-
-def THETAN(refepoch,time_start_dt,time):
-    #Assuming that Start Time is in EST
-    
-    # Epoch in YYddd.dddddd
-    
-    #Ensures reference Epoch is in the right format to be read
-    refepoch=str(refepoch)
-    
-    
-    
-    #Finds Epoch in datetime
-    Epochyrday = dt.datetime.strptime(refepoch[:4],'%y%j')
-    dfrac = np.modf(np.float(refepoch))[0]
-    dfracdt = dt.timedelta(microseconds=np.int(dfrac*24*3600*10**6))
-    Epochdt = Epochyrday + dfracdt
-    
-    t_dt=time
-    
-    #creates Time datetime object
-    #time_start_dt=dt.datetime.strptime(t_start_DateString,'%Y-%m-%d-%H:%M:%S')
-    
-    
-    #t_dt=dt.datetime.strptime(t_string,'%Y-%m-%d %H:%M:%S')
-    
-    
-    
-    # Get riud of this block
-    
-    #Coverts from EST to UTC 0
-    if time_start_dt.day>8 and time_start_dt.month>3 and time_start_dt.month<11:
-        time_start_dt=time_start_dt+dt.timedelta(hours=4)
-        t_dt=t_dt+dt.timedelta(hours=4)
-    #daylight savings time
-    else :
-        time_start_dt=time_start_dt+dt.timedelta(hours=5)
-        t_dt=t_dt+dt.timedelta(hours=5)
-        
-    
-    
-    
-    
-    
-    
-    #Finds Start time and variable t
-    time_start=time_start_dt-Epochdt
-    t=t_dt-Epochdt
-    
-    #Creates T mid for Observation Day
-        #Notice how we replace hour,min and sec to 0. This makes the time midnight!
-    t_mid_dt=time_start_dt
-    t_mid_dt=t_mid_dt.replace(hour=0,minute=0,second=0)
-    
-    
-    
-    
-    J2000=dt.datetime.strptime('2000-01-01 12:00:00','%Y-%m-%d %H:%M:%S')
-    t_mid=t_mid_dt-J2000
-    D_u=(t_mid_dt-J2000).days #The number of days since J2000 to t_mid
-    
-    T_u=D_u/36525
-    GMST_00=99.9677947+36000.77006361*T_u+0.00038793*(T_u**2)-(2.6*10**-8)*T_u**3
-    #Unit: Seconds, will reduce later
-    #Note: degrees seconds
-    
-    r=1.002737909350795+5.9006*10**-11*T_u-(5.9*10**-15)*T_u**2
-    
-    delta_seconds=(t-t_mid).total_seconds()
-    GMST_t=(GMST_00+(360*r*(delta_seconds)))%360
-    
-    
-    
-    
-    return GMST_t
-    
-
 
     # In[]
 def mean_anomaly_motion(time,ts_sat_epoch,M0_mean_anomaly,n_mean_motion, \
