@@ -16,11 +16,107 @@ from scipy.spatial.transform import Rotation as R
 
 
  ##                   Satellite Position,Velocity Calculator Functions
-     # In[]
+
+
+
+    # In[]
+
+def refepoch_to_dt(refepoch):
+    Epochyrday = dt.datetime.strptime(refepoch[:4],'%y%j')
+    dfrac = np.modf(np.float(refepoch))[0]
+    dfracdt = dt.timedelta(microseconds=np.int(dfrac*24*3600*10**6))
+    Epochdt = Epochyrday + dfracdt
+    return Epochdt
+
+    # In[]
+
+def doy(YR,MO,D):
+    if len(str(MO))==1:
+        MO='0'+ str(MO)
+    if len(str(D))==1:
+        D='0'+ str(D)
+    String=str(YR)+str(MO)+str(D)
+    Time = dt.datetime.strptime(String,'%Y%m%d')
+    #Converts First to dt
+    DOY=dt.datetime.strftime(Time,'%j')
+    #Converts from dt to day of the year
+    return DOY
+    
+    # In[]
+def referenceepoch_propagate(TrackingData):
+    starttime=dt.datetime.strptime(TrackingData.starttime,'%Y-%m-%d-%H:%M:%S')
+    endtime=dt.datetime.strptime(TrackingData.endtime,'%Y-%m-%d-%H:%M:%S')
+    Iterations=(endtime-starttime).total_seconds()/float(TrackingData.timestep)
+    refepoch_list=[]
+    time=starttime
+    print(Iterations)
+    for i in range(0,int(Iterations)):
+        yearstring=str(time.year)[2:4]
+        doystring=str(doy(time.year,time.month,time.day))
+        dayfracstring=str((time.microsecond/8.6e+10)+(time.second/86400)+ \
+                          (time.minute/1440)+(time.hour/24))[0:10]
+        print(yearstring,"\n",doystring,"\n",dayfracstring)
+        time=time+dt.timedelta(seconds=float(TrackingData.timestep))
+        if len(doystring)==3:
+            resultstring=yearstring+doystring+dayfracstring
+        elif len(doystring)==2:
+            resultstring=yearstring+" "+doystring+dayfracstring
+        else:
+            resultstring=yearstring+" "+doystring+dayfracstring
+            
+        
+            
+        
+        
+        
+        refepoch_list.append(resultstring)
+        
+        
+    return refepoch_list
+    
+    # In[]
+def THETAN_2(refepoch):
+    #Input is a refepoch array this dsoesn't make sense as Tracking Data contains an easily parsible 
+    start_time_dt=refepoch_to_dt(refepoch[0])
+    times=refepoch_to_dt(refepoch)
+    
+    
+    
+    J2000=dt.datetime.strptime('2000-01-01 12:00:00','%Y-%m-%d %H:%M:%S')
+    
+    #Finds Start time and variable t
+    t=times-J2000
+    
+    #Creates T mid for Observation Day
+        #Notice how we replace hour,min and sec to 0. This makes the time midnight!
+    t_mid_dt=start_time_dt
+    t_mid_dt=t_mid_dt.replace(hour=0,minute=0,second=0)
+    
+    
+    
+    
+    
+    t_mid=t_mid_dt-J2000
+    D_u=(t_mid_dt-J2000).days #The number of days since J2000 to t_mid
+    
+    T_u=D_u/36525
+    GMST_00=99.9677947+36000.77006361*T_u+0.00038793*(T_u**2)-(2.6*10**-8)*T_u**3
+    #Unit: Seconds, will reduce later
+    #Note: degrees seconds
+    
+    r=1.002737909350795+5.9006*10**-11*T_u-(5.9*10**-15)*T_u**2
+    
+    delta_seconds=(t-t_mid).total_seconds()
+    GMST_t=(GMST_00+(360*r*(delta_seconds)))%360
+    
+        
+    return GMST_t    
+ # In[]
+
 def THETAN(refepoch,time_start_dt,time):
     #Assuming that Start Time is in EST
     
-    #Reference Epoch in YYddd.dddddd
+    # Epoch in YYddd.dddddd
     
     #Ensures reference Epoch is in the right format to be read
     refepoch=str(refepoch)
@@ -43,6 +139,7 @@ def THETAN(refepoch,time_start_dt,time):
     
     
     
+    # Get riud of this block
     
     #Coverts from EST to UTC 0
     if time_start_dt.day>8 and time_start_dt.month>3 and time_start_dt.month<11:
@@ -67,11 +164,14 @@ def THETAN(refepoch,time_start_dt,time):
         #Notice how we replace hour,min and sec to 0. This makes the time midnight!
     t_mid_dt=time_start_dt
     t_mid_dt=t_mid_dt.replace(hour=0,minute=0,second=0)
-    t_mid=t_mid_dt-Epochdt
+    
+    
     
     
     J2000=dt.datetime.strptime('2000-01-01 12:00:00','%Y-%m-%d %H:%M:%S')
+    t_mid=t_mid_dt-J2000
     D_u=(t_mid_dt-J2000).days #The number of days since J2000 to t_mid
+    
     T_u=D_u/36525
     GMST_00=99.9677947+36000.77006361*T_u+0.00038793*(T_u**2)-(2.6*10**-8)*T_u**3
     #Unit: Seconds, will reduce later
@@ -84,7 +184,7 @@ def THETAN(refepoch,time_start_dt,time):
     
     
     
-    #Outputs into hours,minutes and seconds
+    
     return GMST_t
     
 
@@ -588,8 +688,9 @@ def Visibility():
 # The Main Program can be deduced to this
 [StationInstance,SatList,Tracking,LinkData]=User_Input_parser_Call(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\Station.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\gps-ops.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\TrackingData.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
 [AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum]=Sat_pos_velCall(StationInstance,SatList,Tracking)
+
 #[AOS,LOS]=Visibility(StationInstance,AZ,EL,time)
-[AZ,EL,Times,Satnum_avail]=Pointing(StationInstance,AZ,EL,time,Satnum)
+[AZ_avail,EL_avail,Times,Satnum_avail]=Pointing(StationInstance,AZ,EL,time,Satnum)
 
     # In[]
 signalloss=linkcal(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
