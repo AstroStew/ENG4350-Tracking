@@ -475,6 +475,7 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
     
     #Assuming that timesteps is in seconds 
     Time_iterations=(Time_end_dt-Time_start_dt).total_seconds()/float(Tracking.timestep)
+    
     print("This is Time Iteration", Time_iterations)
     Time_dt=Time_start_dt
     #initializing empty arrays
@@ -488,7 +489,11 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
     v_rel_ti_list=[]
     Satnum_list=[]
     #Satnum List helps with identifying the Satellite
-
+    
+    
+    Refepoch=referenceepoch_propagate(Tracking)
+        #THETAN has been edited to input time_start_dt and Time_dt
+    GMST=THETAN(Refepoch)
 
 #Iterates through satellite list first then for time 
 #creates list of 
@@ -496,9 +501,7 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
       
       for p in range(0,int(len(SatList))):
         print ("This is time p",p)
-        Refepoch=SatList[p].refepoch
-        #THETAN has been edited to input time_start_dt and Time_dt
-        GMST=THETAN(Refepoch,Time_start_dt,Time_dt)
+        
         [Mt_Mean_anomaly,Nt_anomaly_motion]=mean_anomaly_motion(Time_dt,SatList[p].refepoch,float(SatList[p].meanan),float(SatList[p].meanmo),float(SatList[p].ndot),float(SatList[p].n2dot))
         #degrees,
         ecc_anomaly=KeplerEqn(Mt_Mean_anomaly,SatList[p].eccn)
@@ -507,8 +510,10 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
         a=(mu/(2*np.pi*float(SatList[p].meanmo)/86400)**2)**(1/3)
         [pos_ECI,vel_ECI]=sat_ECI(SatList[p].eccn,KeplerEqn(SatList[p].meanan,SatList[p].eccn), \
         a,SatList[p].raan,SatList[p].argper,SatList[p].incl,Nt_anomaly_motion)
-    
-        [pos_ECF,vel_ECF,vel_rel_ECF]=sat_ECF(GMST,pos_ECI,vel_ECI)
+        
+        
+        GMST_1=GMST[i]    
+        [pos_ECF,vel_ECF,vel_rel_ECF]=sat_ECF(GMST_1,pos_ECI,vel_ECI)
         #Note: We assume that station_body_position is Tx,Ty,Tz
         [Tx,Ty,Tz]=station_ECF(StationInstance.stnlong,StationInstance.stnlat,StationInstance.stnalt)
     
