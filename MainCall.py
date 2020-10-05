@@ -573,6 +573,11 @@ def linkcal(linkdat):
   signalloss=20*math.log(10,4*math.pi*(float(AntennaDia))/(3.0e8*float(frequency)*1e6))
   return signalloss
 
+    # In[]
+def Visibility():
+    
+    return
+
  
     # In[]
 
