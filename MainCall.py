@@ -490,7 +490,7 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
     Satnum_list=[]
     #Satnum List helps with identifying the Satellite
     
-    
+    #Propagtes data for THETAN
     Refepoch=referenceepoch_propagate(Tracking)
         #THETAN has been edited to input time_start_dt and Time_dt
     GMST=THETAN(Refepoch)
@@ -566,12 +566,15 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
   Times_avail=[]
   Satnum_avail=[]
   #creates blanks arrays to be filled
-
+  
 
   while i < int(StnInstance.az_el_nlim):
     ThisStationLimit=StnInstance.az_el_lim[i].split(",")
+    AZ_muth_limit=float(ThisStationLimit[0])*math.pi/180
+    EL_lim_max=float(ThisStationLimit[2])*math.pi/180
+    EL_lim_min=float(ThisStationLimit[1])*math.pi/180
     for j in range(0,len(AZ_list)):
-      if AZ_list[j] > float(ThisStationLimit[0]) and float(ThisStationLimit[2]) > EL_list[j] and EL_list[j] > float(ThisStationLimit[1]):
+      if AZ_list[j] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j] and EL_list[j] > float(EL_lim_min):
         #makes sure 
         AZ_avail.append(AZ_list[j])
         EL_avail.append(EL_list[j])
@@ -617,6 +620,7 @@ def Visibility():
 
 #[AOS,LOS]=Visibility(StationInstance,AZ,EL,time)
 [AZ_avail,EL_avail,Times,Satnum_avail]=Pointing(StationInstance,AZ,EL,time,Satnum)
+#Outputs AZ in Rads
 
     # In[]
 signalloss=linkcal(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
