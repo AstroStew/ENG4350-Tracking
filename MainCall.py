@@ -500,7 +500,7 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
     for i in range(0,int(Time_iterations)):
       
       for p in range(0,int(len(SatList))):
-        print ("This is time p",p)
+        
         
         [Mt_Mean_anomaly,Nt_anomaly_motion]=mean_anomaly_motion(Time_dt,SatList[p].refepoch,float(SatList[p].meanan),float(SatList[p].meanmo),float(SatList[p].ndot),float(SatList[p].n2dot))
         #degrees,
@@ -517,8 +517,6 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
         #Note: We assume that station_body_position is Tx,Ty,Tz
         [Tx,Ty,Tz]=station_ECF(StationInstance.stnlong,StationInstance.stnlat,StationInstance.stnalt)
     
-        print("Tx,Ty,Tz is=",[Tx,Ty,Tz])
-        print("ECF Coordintes are",pos_ECF)
     
          #Note: Station Long and Latitude must be in Radians
         [R_ti,v_rel_ti]=range_ECF2topo([Tx,Ty,Tz],pos_ECF,vel_rel_ECF,StationInstance.stnlong,StationInstance.stnlat)
@@ -537,7 +535,7 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
         v_rel_ti_list.append(v_rel_ti)
 
         time.append(Time_dt)
-      Time_dt=Time_dt+dt.timedelta(seconds=float())
+      Time_dt=Time_dt+dt.timedelta(seconds=float(Tracking.timestep))
       #At the End change Time
       
     
