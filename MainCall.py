@@ -573,6 +573,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
   EL_LOS=[]
   Times_LOS=[]
   SatNum_LOS=[]
+  Satnum_iteration=max(Satnum_list)+1
   
   
 
@@ -592,7 +593,8 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
           
         #Compares to Previous Value
           # If previous value is not in 
-        if j > 0 and  Satnum_list[j] == Satnum_list[j-1] and AZ_list[j-1] < float(AZ_muth_limit) or float(EL_lim_max) < EL_list[j-1] or EL_list[j-1] < float(EL_lim_min):
+          
+        if j >= (Satnum_iteration) and  Satnum_list[j] == Satnum_list[j-Satnum_iteration] and AZ_list[j-Satnum_iteration] < float(AZ_muth_limit) or float(EL_lim_max) < EL_list[j-Satnum_iteration] or EL_list[j-Satnum_iteration] < float(EL_lim_min):
             AZ_AOS.append(AZ_list[j])
             EL_AOS.append(EL_list[j])
             Times_AOS.append(time[j])
@@ -603,7 +605,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
         Times_avail.append(time[j])
         Satnum_avail.append(Satnum_list[j])
       else:
-          if j > 0 and Satnum_list[j]==Satnum_list[j-1] and AZ_list[j-1] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j-1] and EL_list[j-1] > float(EL_lim_min):
+          if j >= (Satnum_iteration)  and Satnum_list[j]==Satnum_list[j-(Satnum_iteration)] and AZ_list[j-(Satnum_iteration)] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j-(Satnum_iteration)] and EL_list[j-(Satnum_iteration)] > float(EL_lim_min):
               AZ_LOS.append(AZ_list[j])
               EL_LOS.append(EL_list[j])
               Times_LOS.append(time[j])
