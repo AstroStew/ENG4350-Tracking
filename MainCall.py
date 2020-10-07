@@ -591,9 +591,8 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
         #compares Azimuth and Elevations to Limit
           
         #Compares to Previous Value
-          # If previous Azimuth, ELevation angles are not in limit  
+          # If previous value is not in 
         if j > 0 and  Satnum_list[j] == Satnum_list[j-1] and AZ_list[j-1] < float(AZ_muth_limit) or float(EL_lim_max) < EL_list[j-1] or EL_list[j-1] < float(EL_lim_min):
-            #AOS
             AZ_AOS.append(AZ_list[j])
             EL_AOS.append(EL_list[j])
             Times_AOS.append(time[j])
@@ -604,7 +603,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
         Times_avail.append(time[j])
         Satnum_avail.append(Satnum_list[j])
       else:
-          if j > 0 and Satnum[j] == Satnum_list[j-1] and AZ_list[j-1] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j-1] and EL_list[j-1] > float(EL_lim_min):
+          if j > 0 and Satnum_list[j]==Satnum_list[j-1] and AZ_list[j-1] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j-1] and EL_list[j-1] > float(EL_lim_min):
               AZ_LOS.append(AZ_list[j])
               EL_LOS.append(EL_list[j])
               Times_LOS.append(time[j])
@@ -618,6 +617,69 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
   
   return AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List
 
+    # In[]
+def Pointing_2(StnInstance,AZ_list,EL_list,time,Satnum_list):
+  
+  i=0
+
+  #avail=available for viewing
+  AZ_avail=[]
+  EL_avail=[]
+  Times_avail=[]
+  Satnum_avail=[]
+  #creates blanks arrays to be filled
+  AZ_AOS=[]
+  EL_AOS=[]
+  Times_AOS=[]
+  SatNum_AOS=[]
+  AZ_LOS=[]
+  EL_LOS=[]
+  Times_LOS=[]
+  SatNum_LOS=[]
+  
+  
+
+  
+    
+  for j in range(0,len(AZ_list)):
+        while i < int(StnInstance.az_el_nlim):
+      
+      # For Each iteration of the Station Instation Limits
+            ThisStationLimit=StnInstance.az_el_lim[i].split(",")
+    
+    # Covnerts Limits from Degrees to Rads
+            AZ_muth_limit=float(ThisStationLimit[0])*math.pi/180
+            EL_lim_max=float(ThisStationLimit[2])*math.pi/180
+            EL_lim_min=float(ThisStationLimit[1])*math.pi/180
+            if AZ_list[j] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j] and EL_list[j] > float(EL_lim_min):
+        #compares Azimuth and Elevations to Limit
+          
+        #Compares to Previous Value
+          # If previous value is not in 
+                if j > 0 and  Satnum_list[j] == Satnum_list[j-1] and AZ_list[j-1] < float(AZ_muth_limit) or float(EL_lim_max) < EL_list[j-1] or EL_list[j-1] < float(EL_lim_min):
+                    AZ_AOS.append(AZ_list[j])
+                    EL_AOS.append(EL_list[j])
+                    Times_AOS.append(time[j])
+                    SatNum_AOS.append(Satnum_list[j])
+            
+                AZ_avail.append(AZ_list[j])
+                EL_avail.append(EL_list[j])
+                Times_avail.append(time[j])
+                Satnum_avail.append(Satnum_list[j])
+            else:
+                    if j > 0 and Satnum_list[j]==Satnum_list[j-1] and AZ_list[j-1] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j-1] and EL_list[j-1] > float(EL_lim_min):
+                        AZ_LOS.append(AZ_list[j])
+                        EL_LOS.append(EL_list[j])
+                        Times_LOS.append(time[j])
+                        SatNum_LOS.append(Satnum_list[j])
+            i=i+1
+    
+  AOS_List=[AZ_AOS,EL_AOS,Times_AOS,SatNum_AOS]
+  LOS_List=[AZ_LOS,EL_LOS,Times_LOS,SatNum_LOS]
+#Creates a list of Available Azimuth, Elevation, Times and Satnum available 
+  
+  
+  return AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List
 
     # In[]
 #def Link_Calculations(LinkData):
