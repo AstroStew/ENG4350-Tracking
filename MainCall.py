@@ -591,7 +591,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
     
     for j in range(0,len(AZ_list)):
       
-      if AZ_list[j] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j] and EL_list[j] > float(EL_lim_min):
+      if AZ_list[j] > (AZ_muth_limit) and (EL_lim_max) > EL_list[j] and EL_list[j] > (EL_lim_min):
         #compares Azimuth and Elevations to Limits
           
           #Satellite Available
@@ -759,6 +759,7 @@ def Visibility(StationInstance,AZ,EL,times,Satnum):
 
 #[AOS,LOS]=Visibility(StationInstance,AZ,EL,time,Satnum)
 [AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List]=Pointing(StationInstance,AZ,EL,time,Satnum)
+AZList=AZ
 #Outputs AZ in Rads
 
     # In[]
