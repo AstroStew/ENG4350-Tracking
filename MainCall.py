@@ -298,7 +298,8 @@ def range_ECF2topo(station_body_position, \
     station_longitude=float(station_longitude)*math.pi/180
     station_latitude=float(station_latitude)*math.pi/180
     #input as Rads only
-    print("This is Stan Body Positon",station_body_position)
+    
+    print("This is Station Body Positon",station_body_position)
     
     #assuming that station body positon is [Tx,Ty,Tz]
     
@@ -564,27 +565,58 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
   Times_avail=[]
   Satnum_avail=[]
   #creates blanks arrays to be filled
+  AZ_AOS=[]
+  EL_AOS=[]
+  Times_AOS=[]
+  SatNum_AOS=[]
+  AZ_LOS=[]
+  EL_LOS=[]
+  Times_LOS=[]
+  SatNum_LOS=[]
+  
   
 
   while i < int(StnInstance.az_el_nlim):
+      
+      # For Each iteration of the Station Instation Limits
     ThisStationLimit=StnInstance.az_el_lim[i].split(",")
+    
+    # Covnerts Limits from Degrees to Rads
     AZ_muth_limit=float(ThisStationLimit[0])*math.pi/180
     EL_lim_max=float(ThisStationLimit[2])*math.pi/180
     EL_lim_min=float(ThisStationLimit[1])*math.pi/180
+    
     for j in range(0,len(AZ_list)):
       if AZ_list[j] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j] and EL_list[j] > float(EL_lim_min):
-        #makes sure 
+        #compares Azimuth and Elevations to Limit
+          
+        #Compares to Previous Value
+          # If previous Azimuth, ELevation angles are not in limit  
+        if j > 0 and  Satnum_list[j] == Satnum_list[j-1] and AZ_list[j-1] < float(AZ_muth_limit) or float(EL_lim_max) < EL_list[j-1] or EL_list[j-1] < float(EL_lim_min):
+            #AOS
+            AZ_AOS.append(AZ_list[j])
+            EL_AOS.append(EL_list[j])
+            Times_AOS.append(time[j])
+            SatNum_AOS.append(Satnum_list[j])
+            
         AZ_avail.append(AZ_list[j])
         EL_avail.append(EL_list[j])
         Times_avail.append(time[j])
         Satnum_avail.append(Satnum_list[j])
+      else:
+          if j > 0 and Satnum[j] == Satnum_list[j-1] AZ_list[j-1] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j-1] and EL_list[j-1] > float(EL_lim_min):
+              AZ_LOS.append(AZ_list[j])
+              EL_LOS.append(EL_list[j])
+              Times_LOS.append(time[j])
+              SatNum_LOS.append(Satnum_list[j])
     i=i+1
     
-
+  AOS_List=[AZ_AOS,EL_AOS,Times_AOS,SatNum_AOS]
+  LOS_List=[AZ_LOS,EL_LOS,Times_LOS,SatNum_LOS]
 #Creates a list of Available Azimuth, Elevation, Times and Satnum available 
   
   
-  return AZ_avail,EL_avail,Times_avail,Satnum_avail
+  return AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List
 
 
     # In[]
@@ -601,7 +633,11 @@ def linkcal(linkdat):
   return signalloss
 
     # In[]
-def Visibility():
+def Visibility(StationInstance,AZ,EL,times,Satnum):
+    [AZ_avail,EL_avail,Times_avail,Satnum_avail]=Pointing(StationInstance,AZ,EL,Satnum)
+    
+    
+    
     
     return
 
@@ -616,8 +652,8 @@ def Visibility():
 [StationInstance,SatList,Tracking,LinkData]=User_Input_parser_Call(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\Station.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\gps-ops.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\TrackingData.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
 [AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum]=Sat_pos_velCall(StationInstance,SatList,Tracking)
 
-#[AOS,LOS]=Visibility(StationInstance,AZ,EL,time)
-[AZ_avail,EL_avail,Times,Satnum_avail]=Pointing(StationInstance,AZ,EL,time,Satnum)
+#[AOS,LOS]=Visibility(StationInstance,AZ,EL,time,Satnum)
+[AZ_avail,EL_avail,Times,Satnum_avail,AOS_List,LOS_List]=Pointing(StationInstance,AZ,EL,time,Satnum)
 #Outputs AZ in Rads
 
     # In[]
