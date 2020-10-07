@@ -604,7 +604,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
         Times_avail.append(time[j])
         Satnum_avail.append(Satnum_list[j])
       else:
-          if j > 0 and Satnum[j] == Satnum_list[j-1] AZ_list[j-1] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j-1] and EL_list[j-1] > float(EL_lim_min):
+          if j > 0 and Satnum[j] == Satnum_list[j-1] and AZ_list[j-1] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j-1] and EL_list[j-1] > float(EL_lim_min):
               AZ_LOS.append(AZ_list[j])
               EL_LOS.append(EL_list[j])
               Times_LOS.append(time[j])
