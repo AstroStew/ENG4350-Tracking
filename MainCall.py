@@ -557,8 +557,7 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
     # In[]
 def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
   
-  i=0
-
+  
   #avail=available for viewing
   AZ_avail=[]
   EL_avail=[]
@@ -574,10 +573,12 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
   Times_LOS=[]
   SatNum_LOS=[]
   Satnum_iteration=max(Satnum_list)+1
+  time_delta=time[1]-time[0]
   
   
 
-  while i < int(StnInstance.az_el_nlim):
+  
+  for i in range(0,int(StnInstance.az_el_nlim)):
       
       # For Each iteration of the Station Instation Limits
     ThisStationLimit=StnInstance.az_el_lim[i].split(",")
@@ -586,31 +587,70 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
     AZ_muth_limit=float(ThisStationLimit[0])*math.pi/180
     EL_lim_max=float(ThisStationLimit[2])*math.pi/180
     EL_lim_min=float(ThisStationLimit[1])*math.pi/180
+    print(AZ_muth_limit,"\t",EL_lim_max,"\t",EL_lim_min,"\t")
     
     for j in range(0,len(AZ_list)):
+      
       if AZ_list[j] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j] and EL_list[j] > float(EL_lim_min):
-        #compares Azimuth and Elevations to Limit
+        #compares Azimuth and Elevations to Limits
           
-        #Compares to Previous Value
-          # If previous value is not in 
+          #Satellite Available
           
+        
+          #Compares to Previous Value
+          # If previous value is not in limits but is now either AOS or from another limit iteration** 
         if j >= (Satnum_iteration) and  Satnum_list[j] == Satnum_list[j-Satnum_iteration] and AZ_list[j-Satnum_iteration] < float(AZ_muth_limit) or float(EL_lim_max) < EL_list[j-Satnum_iteration] or EL_list[j-Satnum_iteration] < float(EL_lim_min):
-            AZ_AOS.append(AZ_list[j])
-            EL_AOS.append(EL_list[j])
-            Times_AOS.append(time[j])
-            SatNum_AOS.append(Satnum_list[j])
+            # A Signal has been acquired
             
+            #** Here we test to see if the AOS was caused by limit bound issues or from actual AOS
+            
+            if i > 0:
+                
+                for k in range(0,len(Times_LOS)):
+                    print (time[j]-time_delta)
+                    if time[j]-time_delta == Times_LOS[k] and Satnum[j]== SatNum_LOS[k]:
+                        append=0
+                        del Times_LOS[k]
+                        del SatNum_LOS[k]
+                        del AZ_LOS[k]
+                        del EL_LOS[k]
+                    else: 
+                        append=1
+                        break
+                if append==1:
+                    AZ_AOS.append(AZ_list[j])
+                    EL_AOS.append(EL_list[j])
+                    Times_AOS.append(time[j])
+                    SatNum_AOS.append(Satnum_list[j])
+                        
+                #Then no AOS, LOS
+                
+            # This is actual AOS    
+            else:
+                AZ_AOS.append(AZ_list[j])
+                EL_AOS.append(EL_list[j])
+                Times_AOS.append(time[j])
+                SatNum_AOS.append(Satnum_list[j])
+                
+                
+                
         AZ_avail.append(AZ_list[j])
         EL_avail.append(EL_list[j])
         Times_avail.append(time[j])
         Satnum_avail.append(Satnum_list[j])
       else:
+          # Satellite Unavailable
+          
+          #Compares previous iteration of Satellite to current Satellite Available
           if j >= (Satnum_iteration)  and Satnum_list[j]==Satnum_list[j-(Satnum_iteration)] and AZ_list[j-(Satnum_iteration)] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j-(Satnum_iteration)] and EL_list[j-(Satnum_iteration)] > float(EL_lim_min):
+              #If Satellite was available but is no longer then it is either LOS or out of our Limit Range
+              #
+              
               AZ_LOS.append(AZ_list[j])
               EL_LOS.append(EL_list[j])
               Times_LOS.append(time[j])
               SatNum_LOS.append(Satnum_list[j])
-    i=i+1
+
     
   AOS_List=[AZ_AOS,EL_AOS,Times_AOS,SatNum_AOS]
   LOS_List=[AZ_LOS,EL_LOS,Times_LOS,SatNum_LOS]
@@ -659,6 +699,7 @@ def Pointing_2(StnInstance,AZ_list,EL_list,time,Satnum_list):
         #Compares to Previous Value
           # If previous value is not in 
                 if j > 0 and  Satnum_list[j] == Satnum_list[j-1] and AZ_list[j-1] < float(AZ_muth_limit) or float(EL_lim_max) < EL_list[j-1] or EL_list[j-1] < float(EL_lim_min):
+                    
                     AZ_AOS.append(AZ_list[j])
                     EL_AOS.append(EL_list[j])
                     Times_AOS.append(time[j])
@@ -698,7 +739,7 @@ def linkcal(linkdat):
 
     # In[]
 def Visibility(StationInstance,AZ,EL,times,Satnum):
-    [AZ_avail,EL_avail,Times_avail,Satnum_avail]=Pointing(StationInstance,AZ,EL,Satnum)
+    #[AZ_avail,EL_avail,Times_avail,Satnum_avail]=Pointing(StationInstance,AZ,EL,Satnum)
     
     
     
@@ -717,7 +758,7 @@ def Visibility(StationInstance,AZ,EL,times,Satnum):
 [AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum]=Sat_pos_velCall(StationInstance,SatList,Tracking)
 
 #[AOS,LOS]=Visibility(StationInstance,AZ,EL,time,Satnum)
-[AZ_avail,EL_avail,Times,Satnum_avail,AOS_List,LOS_List]=Pointing(StationInstance,AZ,EL,time,Satnum)
+[AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List]=Pointing(StationInstance,AZ,EL,time,Satnum)
 #Outputs AZ in Rads
 
     # In[]
