@@ -94,14 +94,14 @@ def THETAN(refepoch):
     
     
         t_mid=t_mid_dt-J2000
-        D_u=(t_mid_dt-J2000).days #The number of days since J2000 to t_mid
+        D_u=(t_mid_dt-J2000).days + (t_mid_dt-J2000).seconds/86400 #The number of days since J2000 to t_mid
     
         T_u=D_u/36525
         GMST_00=99.9677947+36000.77006361*T_u+0.00038793*(T_u**2)-(2.6*10**-8)*T_u**3
     #Unit: Seconds, will reduce later
     #Note: degrees seconds
     
-        r=1.002737909350795+5.9006*10**-11*T_u-(5.9*10**-15)*T_u**2
+        r=(1.002737909350795+5.9006*10**-11*T_u-(5.9*10**-15)*T_u**2)/86400
     
         delta_seconds=(t-t_mid).total_seconds()
         GMST_t=(GMST_00+(360*r*(delta_seconds)))%360
