@@ -214,7 +214,7 @@ def perifocal(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascendi
     v_pz=0
     v_per=[v_px,v_py,v_pz]
     #km/s
-    
+    print("Perifocal:",R_per,v_per)
     
     return R_per,v_per
     # In[]
@@ -224,7 +224,7 @@ def sat_ECI(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascending
     
     #Finds Perifocal Components
     r_per,v_per=perifocal(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascending_node,omega_argument_periapsis,inclination,nt_mean_motion)
-    print("Position and Velocity in Perifocal",r_per)
+    print("Position and Velocity in Perifocal",r_per,v_per)
     
     #Creates transformation
     Per_to_ECI=R.from_euler('ZXZ',[-float(omega_longitude_ascending_node),-float(inclination),-float(omega_argument_periapsis)],degrees=True)
@@ -766,3 +766,20 @@ AZList=AZ
 signalloss=linkcal(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
 
 #Note: AOS/LOS has not been created yet
+
+    # In[]
+#                                           Testing Cell
+
+Refepoch=referenceepoch_propagate(Tracking)
+        #THETAN has been edited to input time_start_dt and Time_dt
+GMST=THETAN(Refepoch)
+Time_dt=dt.datetime.strptime(Tracking.starttime,'%Y-%m-%d-%H:%M:%S')
+p=17
+[Mt_Mean_anomaly,Nt_anomaly_motion]=mean_anomaly_motion(Time_dt,SatList[p].refepoch,float(SatList[p].meanan),float(SatList[p].meanmo),float(SatList[p].ndot),float(SatList[p].n2dot))
+        #degrees,
+ecc_anomaly=KeplerEqn(Mt_Mean_anomaly,SatList[p].eccn)
+        #returns in radians
+mu=398600.4418 #km^3/s^2
+a=(mu/(2*np.pi*float(SatList[p].meanmo)/86400)**2)**(1/3)
+[pos_ECI,vel_ECI]=sat_ECI(SatList[p].eccn,KeplerEqn(SatList[p].meanan,SatList[p].eccn), \
+        a,SatList[p].raan,SatList[p].argper,SatList[p].incl,Nt_anomaly_motion)
