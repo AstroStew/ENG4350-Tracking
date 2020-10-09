@@ -23,7 +23,7 @@ from scipy.spatial.transform import Rotation as R
 
 #Converts time in TLE format to Datetime Format
 def refepoch_to_dt(refepoch):
-    Epochyrday = dt.datetime.strptime((refepoch[:4]),'%y%j')
+    Epochyrday = dt.datetime.strptime((refepoch[0:5]),'%y%j')
     dfrac = np.modf(np.float(refepoch))[0]
     dfracdt = dt.timedelta(microseconds=np.int(dfrac*24*3600*10**6))
     Epochdt = Epochyrday + dfracdt
@@ -102,7 +102,7 @@ def THETAN(refepoch):
         #Creates T mid for Observation Day
         #Notice how we replace hour,min and sec to 0. This makes the time midnight!
         del_sec=(times-Midtime).total_seconds()
-        print(del_sec)
+        print(times)
 
         D_u_2=(times-J2000).days+(times-J2000).seconds/86400
 
