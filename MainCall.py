@@ -560,7 +560,7 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
     return AZ_list,EL_list,Rate_of_AZ_list,Rate_of_EL_list,R_ti_list,v_rel_ti_list,time,Satnum_list
 
     # In[]
-def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
+def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
   
   
   #avail=available for viewing
@@ -579,6 +579,9 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
   SatNum_LOS=[]
   Satnum_iteration=max(Satnum_list)+1
   time_delta=time[1]-time[0]
+  Signal_lost_AOS=[]
+  Signal_lost_LOS=[]
+  Signal_lost_avail=[]
   
   
 
@@ -627,6 +630,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
                     EL_AOS.append(EL_list[j])
                     Times_AOS.append(time[j])
                     SatNum_AOS.append(Satnum_list[j])
+                    Signal_lost_AOS.append(Signal_lost[j])
                         
                 #Then no AOS, LOS
                 
@@ -636,6 +640,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
                 EL_AOS.append(EL_list[j])
                 Times_AOS.append(time[j])
                 SatNum_AOS.append(Satnum_list[j])
+                Signal_lost_AOS.append(Signal_lost[j])
                 
                 
                 
@@ -643,6 +648,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
         EL_avail.append(EL_list[j])
         Times_avail.append(time[j])
         Satnum_avail.append(Satnum_list[j])
+        Signal_lost_avail.append(Signal_lost[j])
       else:
           # Satellite Unavailable
           
@@ -655,79 +661,18 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
               EL_LOS.append(EL_list[j])
               Times_LOS.append(time[j])
               SatNum_LOS.append(Satnum_list[j])
+              Signal_lost_LOS.append(Signal_lost[j])
+              
+              
 
     
-  AOS_List=[AZ_AOS,EL_AOS,Times_AOS,SatNum_AOS]
-  LOS_List=[AZ_LOS,EL_LOS,Times_LOS,SatNum_LOS]
+  AOS_List=[AZ_AOS,EL_AOS,Times_AOS,SatNum_AOS,Signal_lost_AOS]
+  LOS_List=[AZ_LOS,EL_LOS,Times_LOS,SatNum_LOS,Signal_lost_LOS]
 #Creates a list of Available Azimuth, Elevation, Times and Satnum available 
   
   
   return AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List
 
-    # In[]
-def Pointing_2(StnInstance,AZ_list,EL_list,time,Satnum_list):
-  
-  i=0
-
-  #avail=available for viewing
-  AZ_avail=[]
-  EL_avail=[]
-  Times_avail=[]
-  Satnum_avail=[]
-  #creates blanks arrays to be filled
-  AZ_AOS=[]
-  EL_AOS=[]
-  Times_AOS=[]
-  SatNum_AOS=[]
-  AZ_LOS=[]
-  EL_LOS=[]
-  Times_LOS=[]
-  SatNum_LOS=[]
-  
-  
-
-  
-    
-  for j in range(0,len(AZ_list)):
-        while i < int(StnInstance.az_el_nlim):
-      
-      # For Each iteration of the Station Instation Limits
-            ThisStationLimit=StnInstance.az_el_lim[i].split(",")
-    
-    # Covnerts Limits from Degrees to Rads
-            AZ_muth_limit=float(ThisStationLimit[0])*math.pi/180
-            EL_lim_max=float(ThisStationLimit[2])*math.pi/180
-            EL_lim_min=float(ThisStationLimit[1])*math.pi/180
-            if AZ_list[j] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j] and EL_list[j] > float(EL_lim_min):
-        #compares Azimuth and Elevations to Limit
-          
-        #Compares to Previous Value
-          # If previous value is not in 
-                if j > 0 and  Satnum_list[j] == Satnum_list[j-1] and AZ_list[j-1] < float(AZ_muth_limit) or float(EL_lim_max) < EL_list[j-1] or EL_list[j-1] < float(EL_lim_min):
-                    
-                    AZ_AOS.append(AZ_list[j])
-                    EL_AOS.append(EL_list[j])
-                    Times_AOS.append(time[j])
-                    SatNum_AOS.append(Satnum_list[j])
-            
-                AZ_avail.append(AZ_list[j])
-                EL_avail.append(EL_list[j])
-                Times_avail.append(time[j])
-                Satnum_avail.append(Satnum_list[j])
-            else:
-                    if j > 0 and Satnum_list[j]==Satnum_list[j-1] and AZ_list[j-1] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j-1] and EL_list[j-1] > float(EL_lim_min):
-                        AZ_LOS.append(AZ_list[j])
-                        EL_LOS.append(EL_list[j])
-                        Times_LOS.append(time[j])
-                        SatNum_LOS.append(Satnum_list[j])
-            i=i+1
-    
-  AOS_List=[AZ_AOS,EL_AOS,Times_AOS,SatNum_AOS]
-  LOS_List=[AZ_LOS,EL_LOS,Times_LOS,SatNum_LOS]
-#Creates a list of Available Azimuth, Elevation, Times and Satnum available 
-  
-  
-  return AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List
 
     # In[]
 #def Link_Calculations(LinkData):
@@ -743,20 +688,21 @@ def linkcal(linkdat):
   return frequency,Antennaeff,AntennaDia
 
     # In[]
-def Visibility(StationInstance,AZ,EL,times,Satnum):
+def Visibility(StationInstance,AZ,EL,times,Satnum,Signal_lost):
     #[AZ_avail,EL_avail,Times_avail,Satnum_avail]=Pointing(StationInstance,AZ,EL,Satnum)
-    AOS=Pointing(StationInstance,AZ,EL,times,Satnum)[4]
-    LOS=Pointing(StationInstance,AZ,EL,times,Satnum)[5]
+    AOS=Pointing(StationInstance,AZ,EL,times,Satnum,Signal_lost)[4]
+    LOS=Pointing(StationInstance,AZ,EL,times,Satnum,Signal_lost)[5]
     Satnum_AOS=AOS[3]
     Satnum_LOS=LOS[3]
-    
-    Satnum_AOS_Time=AOS[2]
-    Satnum_LOS_Time=LOS[2]
+    Sat_Signal_Lost=AOS[4]
+    print("SAtSignalLoss:",Sat_Signal_Lost)
+    Sat_AOS_Time=AOS[2]
+    Sat_LOS_Time=LOS[2]
     AOS_LOS_list=[]
     for i in range(0,len(Satnum_AOS)):
         for j in range(0,len(Satnum_LOS)):
             if Satnum_AOS[i] == Satnum_LOS[j]:
-                Templist=[Satnum_AOS[i],SatList[Satnum_AOS[i]].name,Satnum_AOS_Time[i],Satnum_LOS_Time[j]]
+                Templist=[Satnum_AOS[i],SatList[Satnum_AOS[i]].name,Sat_AOS_Time[i],Sat_LOS_Time[j],Sat_Signal_Lost[i]]
                 #creates a temporary list to store Sat number,Sat list name ,AOS time,LOS time and 
                 AOS_LOS_list.append(Templist)
                 
@@ -785,12 +731,12 @@ def TrackingData(freq,Antennaeff,AntennaDia,R_ti):
 [StationInstance,SatList,Tracking,LinkData]=User_Input_parser_Call(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\Station.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\MiniQuiz2\gps-ops.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\MiniQuiz2\TrackingData.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
 [AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum]=Sat_pos_velCall(StationInstance,SatList,Tracking)
 
-
-[AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List]=Pointing(StationInstance,AZ,EL,time,Satnum)
-#Visibility creates a formatted list 
-[AOS_LOS_list]=Visibility(StationInstance,AZ,EL,time,Satnum)
 [freq,Antennaeff,AntennaDia]=linkcal(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
 Signal_loss=TrackingData(freq,Antennaeff,AntennaDia,R_ti)
+[AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List]=Pointing(StationInstance,AZ,EL,time,Satnum,Signal_loss)
+#Visibility creates a formatted list 
+[AOS_LOS_list]=Visibility(StationInstance,AZ,EL,time,Satnum,Signal_loss)
+
 
 
 AZList=AZ
