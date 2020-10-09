@@ -54,8 +54,8 @@ def referenceepoch_propagate(TrackingData):
     
     for i in range(0,int(Iterations)):
         yearstring=str(time.year)[2:4]
-        dayfrac=((time.microsecond/8.6e+10)+(time.second/86400)+ \
-                          (time.minute/1440)+(time.hour/24))
+        dayfrac=round(((time.microsecond/8.6e+10)+(time.second/86400)+ \
+                          (time.minute/1440)+(time.hour/24)),4)
         doy_nofrac=str(doy(time.year,time.month,time.day))
         doystring=str(int(doy(time.year,time.month,time.day))+dayfrac)[0:13]
         time=time+dt.timedelta(seconds=float(TrackingData.timestep))
@@ -93,23 +93,23 @@ def THETAN(refepoch):
     T_u=D_u/36525
     GMST_00=(99.9677947+36000.7700631*T_u+0.00038793*T_u**2-2.6e-8*T_u**3)%360
 
-    t_mid_dt=start_time_dt.replace(hour=0,minute=0,second=0)
+    
     
 
     for i in range(0,len(refepoch)):
         times=(refepoch_to_dt(refepoch[i]))
-        t=times-J2000
+        
         #Creates T mid for Observation Day
         #Notice how we replace hour,min and sec to 0. This makes the time midnight!
         del_sec=(times-Midtime).total_seconds()
-        print(times)
+        
 
         D_u_2=(times-J2000).days+(times-J2000).seconds/86400
 
         T_u_2=D_u_2/36525
 
         r=1.002737909350795+5.9006e-11*(T_u_2-T_u)-5.9e-15*(T_u_2-T_u)**2
-        GMST_t=GMST_00+360*r/86400*(del_sec)
+        GMST_t=(GMST_00+360*r/86400*(del_sec))%360
         
         GMST_list.append(GMST_t)
         
@@ -795,34 +795,11 @@ p=17
 [Mt_Mean_anomaly,Nt_anomaly_motion]=mean_anomaly_motion(Time_dt,SatList[p].refepoch,float(SatList[p].meanan),float(SatList[p].meanmo),float(SatList[p].ndot),float(SatList[p].n2dot))
         #degrees,
 ecc_anomaly=KeplerEqn(Mt_Mean_anomaly,SatList[p].eccn)
-
-
-    # In[]
-J2000=dt.datetime.strptime('2000-01-01 12:00:00','%Y-%m-%d %H:%M:%S')
-Starttime=dt.datetime.strptime(Tracking.starttime,'%Y-%m-%d-%H:%M:%S')
-Midtime=Starttime.replace(hour=0,minute=0,second=0)
-D_u=(Midtime-J2000).days+(Midtime-J2000).seconds/86400
-T_u=D_u/36525
-GMST_00=(99.9677947+36000.7700631*T_u+0.00038793*T_u**2-2.6e-8*T_u**3)%360
-
-
-del_sec=(Starttime-Midtime).total_seconds()
-
-
-D_u_2=(Starttime-J2000).days+(Starttime-J2000).seconds/86400
-
-T_u_2=D_u_2/36525
-
-r=1.002737909350795+5.9006e-11*(T_u_2-T_u)-5.9e-15*(T_u_2-T_u)**2
-GMST_t=GMST_00+360*r*(del_sec)
-GMST_t
-GMST_t%360
-GMST_t=GMST_00+360*r/86400*(del_sec)
-
-    # In[]
-
         #returns in radians
 mu=398600.4418 #km^3/s^2
 a=(mu/(2*np.pi*float(SatList[p].meanmo)/86400)**2)**(1/3)
 [pos_ECI,vel_ECI]=sat_ECI(SatList[p].eccn,KeplerEqn(SatList[p].meanan,SatList[p].eccn), \
         a,SatList[p].raan,SatList[p].argper,SatList[p].incl,Nt_anomaly_motion)
+
+    # In[]
+
