@@ -21,6 +21,7 @@ from scipy.spatial.transform import Rotation as R
 
     # In[]
 
+#Converts time in TLE format to Datetime Format
 def refepoch_to_dt(refepoch):
     Epochyrday = dt.datetime.strptime((refepoch[:4]),'%y%j')
     dfrac = np.modf(np.float(refepoch))[0]
@@ -29,7 +30,7 @@ def refepoch_to_dt(refepoch):
     return Epochdt
 
     # In[]
-
+# Finds the Day of Year from the Year Month and Day parameters
 def doy(YR,MO,D):
     if len(str(MO))==1:
         MO='0'+ str(MO)
@@ -43,25 +44,29 @@ def doy(YR,MO,D):
     return DOY
     
     # In[]
+# This creates a list of 
 def referenceepoch_propagate(TrackingData):
     starttime=dt.datetime.strptime(TrackingData.starttime,'%Y-%m-%d-%H:%M:%S')
     endtime=dt.datetime.strptime(TrackingData.endtime,'%Y-%m-%d-%H:%M:%S')
     Iterations=(endtime-starttime).total_seconds()/float(TrackingData.timestep)
     refepoch_list=[]
     time=starttime
-    print(Iterations)
+    
     for i in range(0,int(Iterations)):
         yearstring=str(time.year)[2:4]
-        doystring=str(doy(time.year,time.month,time.day))
-        dayfracstring=str((time.microsecond/8.6e+10)+(time.second/86400)+ \
-                          (time.minute/1440)+(time.hour/24))[0:10]
+        dayfrac=((time.microsecond/8.6e+10)+(time.second/86400)+ \
+                          (time.minute/1440)+(time.hour/24))
+        doy_nofrac=str(doy(time.year,time.month,time.day))
+        doystring=str(int(doy(time.year,time.month,time.day))+dayfrac)[0:13]
         time=time+dt.timedelta(seconds=float(TrackingData.timestep))
-        if len(doystring)==3:
-            resultstring=yearstring+doystring+dayfracstring
-        elif len(doystring)==2:
-            resultstring=yearstring+" "+doystring+dayfracstring
-        else:
-            resultstring=yearstring+" "+doystring+dayfracstring
+        
+        
+        if len(doy_nofrac)==3:
+            resultstring=yearstring+doystring
+        elif len(doy_nofrac)==2:
+            resultstring=yearstring+"0"+doystring
+        elif len(doy_nofrac)==1:
+            resultstring=yearstring+"00"+doystring
             
         
             
@@ -80,31 +85,31 @@ def THETAN(refepoch):
     
     GMST_list=[]
     
+    
     J2000=dt.datetime.strptime('2000-01-01 12:00:00','%Y-%m-%d %H:%M:%S')
+    Starttime=dt.datetime.strptime(Tracking.starttime,'%Y-%m-%d-%H:%M:%S')
+    Midtime=Starttime.replace(hour=0,minute=0,second=0)
+    D_u=(Midtime-J2000).days+(Midtime-J2000).seconds/86400
+    T_u=D_u/36525
+    GMST_00=(99.9677947+36000.7700631*T_u+0.00038793*T_u**2-2.6e-8*T_u**3)%360
+
+    t_mid_dt=start_time_dt.replace(hour=0,minute=0,second=0)
+    
+
     for i in range(0,len(refepoch)):
         times=(refepoch_to_dt(refepoch[i]))
         t=times-J2000
         #Creates T mid for Observation Day
         #Notice how we replace hour,min and sec to 0. This makes the time midnight!
-        t_mid_dt=start_time_dt
-        t_mid_dt=t_mid_dt.replace(hour=0,minute=0,second=0)
-    
-    
-    
-    
-    
-        t_mid=t_mid_dt-J2000
-        D_u=(t_mid_dt-J2000).days + (t_mid_dt-J2000).seconds/86400 #The number of days since J2000 to t_mid
-    
-        T_u=D_u/36525
-        GMST_00=99.9677947+36000.77006361*T_u+0.00038793*(T_u**2)-(2.6*10**-8)*T_u**3
-    #Unit: Seconds, will reduce later
-    #Note: degrees seconds
-    
-        r=(1.002737909350795+5.9006*10**-11*T_u-(5.9*10**-15)*T_u**2)/86400
-    
-        delta_seconds=(t-t_mid).total_seconds()
-        GMST_t=(GMST_00+(360*r*(delta_seconds)))%360
+        del_sec=(times-Midtime).total_seconds()
+        print(del_sec)
+
+        D_u_2=(times-J2000).days+(times-J2000).seconds/86400
+
+        T_u_2=D_u_2/36525
+
+        r=1.002737909350795+5.9006e-11*(T_u_2-T_u)-5.9e-15*(T_u_2-T_u)**2
+        GMST_t=GMST_00+360*r/86400*(del_sec)
         
         GMST_list.append(GMST_t)
         
@@ -608,7 +613,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
                 
                 for k in range(0,len(Times_LOS)):
                     print (time[j]-time_delta)
-                    if time[j]-time_delta == Times_LOS[k] and Satnum[j]== SatNum_LOS[k]:
+                    if time[j] == Times_LOS[k] and Satnum[j]== SatNum_LOS[k]:
                         append=0
                         del Times_LOS[k]
                         del SatNum_LOS[k]
@@ -772,12 +777,50 @@ signalloss=linkcal(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\Reference
 
 Refepoch=referenceepoch_propagate(Tracking)
         #THETAN has been edited to input time_start_dt and Time_dt
+Starttime=dt.datetime.strptime(Tracking.starttime,'%Y-%m-%d-%H:%M:%S')
+Midtime=Starttime.replace(hour=0,minute=0,second=0)
+J2000=dt.datetime.strptime('2000-01-01 12:00:00','%Y-%m-%d %H:%M:%S')
+D_u=(Midtime-J2000).days+(Midtime-J2000).seconds/86400
+T_u=D_u/36252
+D_u_2=(Starttime-J2000).days+(Starttime-J2000).seconds/86400
+T_u_2=D_u_2/36525
+GMST_00=(99.9677947+36000.7700631*T_u+0.00038793*T_u**2-2.6e-8*T_u**3)%360
+r=1.002737909350795+5.9006e-11*(T_u_2-T_u)-5.9e-15*(T_u_2-T_u)**2
+del_sec=(Starttime-Midtime).total_seconds()
+GMST_t=(GMST_00*((Midtime-J2000).total_seconds())+360*r/86400*(del_sec+60))%360
+
 GMST=THETAN(Refepoch)
 Time_dt=dt.datetime.strptime(Tracking.starttime,'%Y-%m-%d-%H:%M:%S')
 p=17
 [Mt_Mean_anomaly,Nt_anomaly_motion]=mean_anomaly_motion(Time_dt,SatList[p].refepoch,float(SatList[p].meanan),float(SatList[p].meanmo),float(SatList[p].ndot),float(SatList[p].n2dot))
         #degrees,
 ecc_anomaly=KeplerEqn(Mt_Mean_anomaly,SatList[p].eccn)
+
+
+    # In[]
+J2000=dt.datetime.strptime('2000-01-01 12:00:00','%Y-%m-%d %H:%M:%S')
+Starttime=dt.datetime.strptime(Tracking.starttime,'%Y-%m-%d-%H:%M:%S')
+Midtime=Starttime.replace(hour=0,minute=0,second=0)
+D_u=(Midtime-J2000).days+(Midtime-J2000).seconds/86400
+T_u=D_u/36525
+GMST_00=(99.9677947+36000.7700631*T_u+0.00038793*T_u**2-2.6e-8*T_u**3)%360
+
+
+del_sec=(Starttime-Midtime).total_seconds()
+
+
+D_u_2=(Starttime-J2000).days+(Starttime-J2000).seconds/86400
+
+T_u_2=D_u_2/36525
+
+r=1.002737909350795+5.9006e-11*(T_u_2-T_u)-5.9e-15*(T_u_2-T_u)**2
+GMST_t=GMST_00+360*r*(del_sec)
+GMST_t
+GMST_t%360
+GMST_t=GMST_00+360*r/86400*(del_sec)
+
+    # In[]
+
         #returns in radians
 mu=398600.4418 #km^3/s^2
 a=(mu/(2*np.pi*float(SatList[p].meanmo)/86400)**2)**(1/3)
