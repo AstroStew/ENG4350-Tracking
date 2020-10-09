@@ -739,14 +739,14 @@ def linkcal(linkdat):
   Antennaeff=Linkcalcfile.readline()
   AntennaDia=Linkcalcfile.readline()
   Linkcalcfile.close
-  signalloss=20*math.log(10,4*math.pi*(float(AntennaDia))/(3.0e8*float(frequency)*1e6))
-  return signalloss
+  #signalloss=20*math.log(10,4*math.pi*(float(AntennaDia))/(3.0e8*float(frequency)*1e6))
+  return frequency,Antennaeff,AntennaDia
 
     # In[]
 def Visibility(StationInstance,AZ,EL,times,Satnum):
     #[AZ_avail,EL_avail,Times_avail,Satnum_avail]=Pointing(StationInstance,AZ,EL,Satnum)
-    AOS=Pointing(StationInstance,AZ,EL,time,Satnum)[4]
-    LOS=Pointing(StationInstance,AZ,EL,time,Satnum)[5]
+    AOS=Pointing(StationInstance,AZ,EL,times,Satnum)[4]
+    LOS=Pointing(StationInstance,AZ,EL,times,Satnum)[5]
     Satnum_AOS=AOS[3]
     Satnum_LOS=LOS[3]
     
@@ -757,6 +757,7 @@ def Visibility(StationInstance,AZ,EL,times,Satnum):
         for j in range(0,len(Satnum_LOS)):
             if Satnum_AOS[i] == Satnum_LOS[j]:
                 Templist=[Satnum_AOS[i],SatList[Satnum_AOS[i]].name,Satnum_AOS_Time[i],Satnum_LOS_Time[j]]
+                #creates a temporary list to store Sat number,Sat list name ,AOS time,LOS time and 
                 AOS_LOS_list.append(Templist)
                 
         
@@ -765,6 +766,13 @@ def Visibility(StationInstance,AZ,EL,times,Satnum):
     
     
     return AOS_LOS_list
+    # In[]
+def TrackingData(freq,Antennaeff,AntennaDia,R_ti):
+    Signal_loss=[]
+    for i in range(0,len(R_ti)):
+        R=np.linalg.norm(R_ti[i])
+        Signal_loss.append(20*math.log(10,4*math.pi*(float(R))/(3.0e8*float(freq)*1e6)))
+    return Signal_loss
 
  
     # In[]
@@ -777,10 +785,14 @@ def Visibility(StationInstance,AZ,EL,times,Satnum):
 [StationInstance,SatList,Tracking,LinkData]=User_Input_parser_Call(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\Station.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\MiniQuiz2\gps-ops.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\MiniQuiz2\TrackingData.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
 [AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum]=Sat_pos_velCall(StationInstance,SatList,Tracking)
 
-a=Pointing(StationInstance,AZ,EL,time,Satnum)[4]
+
 [AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List]=Pointing(StationInstance,AZ,EL,time,Satnum)
 #Visibility creates a formatted list 
 [AOS_LOS_list]=Visibility(StationInstance,AZ,EL,time,Satnum)
+[freq,Antennaeff,AntennaDia]=linkcal(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
+Signal_loss=TrackingData(freq,Antennaeff,AntennaDia,R_ti)
+
+
 AZList=AZ
 #Outputs AZ in Rads
 
