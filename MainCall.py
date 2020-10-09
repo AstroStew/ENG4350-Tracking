@@ -81,7 +81,7 @@ def referenceepoch_propagate(TrackingData):
     # In[]
 def THETAN(refepoch):
     #Input is a refepoch array this dsoesn't make sense as Tracking Data contains an easily parsible 
-    start_time_dt=refepoch_to_dt(refepoch[0])
+    
     
     GMST_list=[]
     
@@ -745,11 +745,26 @@ def linkcal(linkdat):
     # In[]
 def Visibility(StationInstance,AZ,EL,times,Satnum):
     #[AZ_avail,EL_avail,Times_avail,Satnum_avail]=Pointing(StationInstance,AZ,EL,Satnum)
+    AOS=Pointing(StationInstance,AZ,EL,time,Satnum)[4]
+    LOS=Pointing(StationInstance,AZ,EL,time,Satnum)[5]
+    Satnum_AOS=AOS[3]
+    Satnum_LOS=LOS[3]
+    
+    Satnum_AOS_Time=AOS[2]
+    Satnum_LOS_Time=LOS[2]
+    AOS_LOS_list=[]
+    for i in range(0,len(Satnum_AOS)):
+        for j in range(0,len(Satnum_LOS)):
+            if Satnum_AOS[i] == Satnum_LOS[j]:
+                Templist=[Satnum_AOS[i],SatList[Satnum_AOS[i]].name,Satnum_AOS_Time[i],Satnum_LOS_Time[j]]
+                AOS_LOS_list.append(Templist)
+                
+        
     
     
     
     
-    return
+    return AOS_LOS_list
 
  
     # In[]
@@ -759,11 +774,13 @@ def Visibility(StationInstance,AZ,EL,times,Satnum):
 
 #Assuming That The Use has alreadu initialized all necessary functions and classes
 # The Main Program can be deduced to this
-[StationInstance,SatList,Tracking,LinkData]=User_Input_parser_Call(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\Station.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\gps-ops.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\TrackingData.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
+[StationInstance,SatList,Tracking,LinkData]=User_Input_parser_Call(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\Station.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\MiniQuiz2\gps-ops.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\MiniQuiz2\TrackingData.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
 [AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum]=Sat_pos_velCall(StationInstance,SatList,Tracking)
 
-#[AOS,LOS]=Visibility(StationInstance,AZ,EL,time,Satnum)
+a=Pointing(StationInstance,AZ,EL,time,Satnum)[4]
 [AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List]=Pointing(StationInstance,AZ,EL,time,Satnum)
+#Visibility creates a formatted list 
+[AOS_LOS_list]=Visibility(StationInstance,AZ,EL,time,Satnum)
 AZList=AZ
 #Outputs AZ in Rads
 
@@ -776,7 +793,8 @@ signalloss=linkcal(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\Reference
 #                                           Testing Cell
 
 Refepoch=referenceepoch_propagate(Tracking)
-        #THETAN has been edited to input time_start_dt and Time_dt
+#THETAN has been edited to input time_start_dt and Time_dt
+#Tracking is Trackinginstance data
 Starttime=dt.datetime.strptime(Tracking.starttime,'%Y-%m-%d-%H:%M:%S')
 Midtime=Starttime.replace(hour=0,minute=0,second=0)
 J2000=dt.datetime.strptime('2000-01-01 12:00:00','%Y-%m-%d %H:%M:%S')
@@ -785,9 +803,20 @@ T_u=D_u/36252
 D_u_2=(Starttime-J2000).days+(Starttime-J2000).seconds/86400
 T_u_2=D_u_2/36525
 GMST_00=(99.9677947+36000.7700631*T_u+0.00038793*T_u**2-2.6e-8*T_u**3)%360
-r=1.002737909350795+5.9006e-11*(T_u_2-T_u)-5.9e-15*(T_u_2-T_u)**2
+r=1.002737909350795+5.9006e-11*(T_u)-5.9e-15*(T_u)**2
 del_sec=(Starttime-Midtime).total_seconds()
-GMST_t=(GMST_00*((Midtime-J2000).total_seconds())+360*r/86400*(del_sec+60))%360
+GMST_t=(GMST_00+360*r/86400*(del_sec))%360
+
+
+
+
+
+
+
+
+
+
+
 
 GMST=THETAN(Refepoch)
 Time_dt=dt.datetime.strptime(Tracking.starttime,'%Y-%m-%d-%H:%M:%S')
