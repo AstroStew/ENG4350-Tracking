@@ -112,6 +112,10 @@ def THETAN(refepoch):
         GMST_t=(GMST_00+360*r/86400*(del_sec))%360
         
         GMST_list.append(GMST_t)
+    
+    #Low Level Debug Helper
+    global zTest_GMST_List
+    zTest_GMST_List=GMST_list
         
     return GMST_list    
 
@@ -141,6 +145,10 @@ def mean_anomaly_motion(time,ts_sat_epoch,M0_mean_anomaly,n_mean_motion, \
 
     #Removing Mutlples
     Mt_mean_anomaly=Mt_mean_anomaly%360
+    
+    # Low Level Debug Helper
+    global zTest_Mt_Mean_anomaly
+    zTest_Mt_Mean_anomaly=Mt_mean_anomaly
     
     return Mt_mean_anomaly,Nt_mean_anomaly_motion
 
@@ -175,14 +183,19 @@ def KeplerEqn(Mt_mean_anomaly,eccentricity):
     
     #Calculates Further Iterations
     while Del_E_mag > permitted_error:
-        i=i+1
+        
         Del_M_.append(float(E_[i])-e*math.sin((E_[i]))-float(Mt_mean_anomaly))
         Del_E_.append(Del_M_[i]/(1-e*math.cos(E_[i])))
         Del_E_mag=abs(Del_E_[i])
         (Del_E_mag)
         E_.append(E_[i]+Del_E_[i])
+        i=i+1
         
-       
+     
+   # Low Level debug Helper
+    global zTest_Ecc_anom
+    zTest_Ecc_anom=E_[i+1]%(2*math.pi)
+        
     return E_[i+1]%(2*math.pi) #reduces Eccentric Anom 
 #! Returns in Radians
     # In[]
@@ -219,7 +232,10 @@ def perifocal(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascendi
     v_pz=0
     v_per=[v_px,v_py,v_pz]
     #km/s
-    print("Perifocal:",R_per,v_per)
+    
+    # Low Level Debug Helper
+    global zTest_R_per, zTest_v_per
+    zTest_R_per=R_per, zTest_v_per=v_per 
     
     return R_per,v_per
     # In[]
@@ -229,7 +245,7 @@ def sat_ECI(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascending
     
     #Finds Perifocal Components
     r_per,v_per=perifocal(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascending_node,omega_argument_periapsis,inclination,nt_mean_motion)
-    print("Position and Velocity in Perifocal",r_per,v_per)
+    
     
     #Creates transformation
     Per_to_ECI=R.from_euler('ZXZ',[-float(omega_longitude_ascending_node),-float(inclination),-float(omega_argument_periapsis)],degrees=True)
@@ -237,25 +253,25 @@ def sat_ECI(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascending
     pos_ECI=(Per_to_ECI.apply(r_per)).tolist()
     vel_ECI=(Per_to_ECI.apply(v_per)).tolist()
     
-    print("Position in ECI",pos_ECI)
+    
     
     vel_ECI=(Per_to_ECI.apply(v_per)).tolist()
     return pos_ECI,vel_ECI
     # In[]
 def sat_ECF(theta_t,eci_position,eci_velocity):
     
-    print("This is the intake ECI Position",eci_position)
+    
     #Creates rotational transformation
     ECI_to_ECF=R.from_euler('Z',[float(theta_t)], degrees=True)
     
     #Applies Rotational Transformation
     pos_ECF=ECI_to_ECF.apply(eci_position).tolist()[0] # had to perform weird 
     #weird conversion to get back to list
-    print(pos_ECF)
+    
     vel_ECF=ECI_to_ECF.apply(eci_velocity).tolist()[0]
     #km/s
     
-    print("This is the Position in ECI",eci_position)
+    
     #Relative Velocity
     Siderial_rotation=[1,1,360/86164.091] #Degrees/s
     vel_rel=ECI_to_ECF.apply(eci_velocity-np.matmul(Siderial_rotation,eci_position))
@@ -304,14 +320,14 @@ def range_ECF2topo(station_body_position, \
     station_latitude=float(station_latitude)*math.pi/180
     #input as Rads only
     
-    print("This is Station Body Positon",station_body_position)
+    
     
     #assuming that station body positon is [Tx,Ty,Tz]
     
     R=[sat_ecf_position[0]-station_body_position[0],\
        sat_ecf_position[1]-station_body_position[1],\
         sat_ecf_position[2]-station_body_position[2]]
-    print("This is R:  ",R)
+    
     
     #Intializes Transformation Matrix
     T_ECF_to_topo=[[-math.sin(station_longitude), \
@@ -323,8 +339,8 @@ def range_ECF2topo(station_body_position, \
                                                  math.sin(station_longitude)* \
                                                  math.cos(station_latitude), \
                                                  math.sin(station_latitude)]]
-    print("This is Transformation: ",T_ECF_to_topo)
-    print("This is R_Transpose: ",(R))
+    
+    
     #Transform Range Vector
     R_ti=np.matmul(np.array(R),np.array(T_ECF_to_topo))
     
@@ -338,9 +354,9 @@ def range_ECF2topo(station_body_position, \
     # In[]
 def range_topo2look_angle(range_topo_position,range_topo_velocity):
     R=range_topo_position
-    print("REange Topo position",range_topo_position[0])
+    
     v_rel=range_topo_velocity
-    print("This is Topo Range",range_topo_position)
+    
     #Calculates the AZ and EL
     AZ=math.atan(R[0]/R[1])
     EL=math.atan(R[2]/(math.sqrt(R[0]**2+R[1]**2)))
@@ -351,7 +367,7 @@ def range_topo2look_angle(range_topo_position,range_topo_velocity):
     R_xy=[R[0],R[1]]
     #In Software Specification Rxy is [tx ty]{Rtx;Rty} which would give a result of a singular value
     #Here we assume the Professor meant R_xy= the x and y components of R
-    print(v_rel)
+    
     v_xy=[v_rel[0],v_rel[1]]
     
     #Calculates rates of AZ and EL
@@ -482,7 +498,7 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
     #Assuming that timesteps is in seconds 
     Time_iterations=(Time_end_dt-Time_start_dt).total_seconds()/float(Tracking.timestep)
     
-    print("This is Time Iteration", Time_iterations)
+    
     Time_dt=Time_start_dt
     #initializing empty arrays
     time=[]
@@ -595,7 +611,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
     AZ_muth_limit=float(ThisStationLimit[0])*math.pi/180
     EL_lim_max=float(ThisStationLimit[2])*math.pi/180
     EL_lim_min=float(ThisStationLimit[1])*math.pi/180
-    print(AZ_muth_limit,"\t",EL_lim_max,"\t",EL_lim_min,"\t")
+    
     
     for j in range(0,len(AZ_list)):
       
@@ -615,7 +631,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
             if i > 0:
                 
                 for k in range(0,len(Times_LOS)):
-                    print (time[j]-time_delta)
+                    
                     if time[j] == Times_LOS[k] and Satnum[j]== SatNum_LOS[k]:
                         append=0
                         del Times_LOS[k]
@@ -695,7 +711,7 @@ def Visibility(StationInstance,AZ,EL,times,Satnum,Signal_lost):
     Satnum_AOS=AOS[3]
     Satnum_LOS=LOS[3]
     Sat_Signal_Lost=AOS[4]
-    print("SAtSignalLoss:",Sat_Signal_Lost)
+    
     Sat_AOS_Time=AOS[2]
     Sat_LOS_Time=LOS[2]
     AOS_LOS_list=[]
