@@ -755,6 +755,7 @@ def Visibility(StationInstance,AZ,EL,times,Satnum,Signal_lost):
     
     Sat_AOS_Time=AOS[2]
     Sat_LOS_Time=LOS[2]
+    
     AOS_LOS_list=[]
     for i in range(0,len(Satnum_AOS)):
         for j in range(0,len(Satnum_LOS)):
@@ -868,14 +869,14 @@ def STKsp(PointingAngles,time):
 
 #Assuming That The Use has alreadu initialized all necessary functions and classes
 # The Main Program can be deduced to this
-[StationInstance,SatList,Tracking,LinkData]=User_Input_parser_Call(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\Station.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\MiniQuiz2\gps-ops.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\MiniQuiz2\TrackingData.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
+[StationInstance,SatList,Tracking,LinkData]=User_Input_parser_Call(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\Station.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\gps-ops.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\TrackingData.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
 [AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum]=Sat_pos_velCall(StationInstance,SatList,Tracking)
 
 [freq,Antennaeff,AntennaDia]=linkcal(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
 Signal_loss=TrackingData(freq,Antennaeff,AntennaDia,R_ti)
 [AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List]=Pointing(StationInstance,AZ,EL,time,Satnum,Signal_loss)
 #Visibility creates a formatted list 
-[AOS_LOS_list]=Visibility(StationInstance,AZ,EL,time,Satnum,Signal_loss)
+AOS_LOS_list=Visibility(StationInstance,AZ,EL,time,Satnum,Signal_loss)
 
 # Debugging
 STKout('EphemFileExample.txt',str(Starttime),time,'Inertial',zTest_ECI_R,zTest_ECI_v)
