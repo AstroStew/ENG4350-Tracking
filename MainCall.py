@@ -87,6 +87,7 @@ def THETAN(refepoch):
     
     
     J2000=dt.datetime.strptime('2000-01-01 12:00:00','%Y-%m-%d %H:%M:%S')
+    global Starttime
     Starttime=dt.datetime.strptime(Tracking.starttime,'%Y-%m-%d-%H:%M:%S')
     Midtime=Starttime.replace(hour=0,minute=0,second=0)
     D_u=(Midtime-J2000).days+(Midtime-J2000).seconds/86400
@@ -114,8 +115,7 @@ def THETAN(refepoch):
         GMST_list.append(GMST_t)
     
     #Low Level Debug Helper
-    global zTest_GMST_List
-    zTest_GMST_List=GMST_list
+    
         
     return GMST_list    
 
@@ -148,7 +148,16 @@ def mean_anomaly_motion(time,ts_sat_epoch,M0_mean_anomaly,n_mean_motion, \
     
     # Low Level Debug Helper
     global zTest_Mt_Mean_anomaly
-    zTest_Mt_Mean_anomaly=Mt_mean_anomaly
+    
+    try:
+        
+        zTest_Mt_Mean_anomaly.append(Mt_mean_anomaly)
+    except:
+        zTest_Mt_Mean_anomaly=[]
+        zTest_Mt_Mean_anomaly.append(Mt_mean_anomaly)
+        
+        
+    
     
     return Mt_mean_anomaly,Nt_mean_anomaly_motion
 
@@ -192,9 +201,8 @@ def KeplerEqn(Mt_mean_anomaly,eccentricity):
         i=i+1
         
      
-   # Low Level debug Helper
-    global zTest_Ecc_anom
-    zTest_Ecc_anom=E_[i+1]%(2*math.pi)
+   
+    
         
     return E_[i+1]%(2*math.pi) #reduces Eccentric Anom 
 #! Returns in Radians
@@ -235,8 +243,14 @@ def perifocal(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascendi
     
     # Low Level Debug Helper
     global zTest_R_per, zTest_v_per
-    zTest_R_per=R_per
-    zTest_v_per=v_per 
+    try:
+        zTest_R_per.append(R_per)
+        zTest_v_per.append(v_per)
+    except:
+        zTest_R_per=[]
+        zTest_v_per=[]
+        zTest_R_per.append(R_per)
+        zTest_v_per.append(v_per) 
     
     return R_per,v_per
     # In[]
@@ -254,11 +268,10 @@ def sat_ECI(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascending
     pos_ECI=(Per_to_ECI.apply(r_per)).tolist()
     vel_ECI=(Per_to_ECI.apply(v_per)).tolist()
     
-    global zTest_ECI_R, zTest_ECI_v
-    zTest_ECI_R=pos_ECI
-    zTest_ECI_v=vel_ECI
     
-    vel_ECI=(Per_to_ECI.apply(v_per)).tolist()
+    
+    
+    
     return pos_ECI,vel_ECI
     # In[]
 def sat_ECF(theta_t,eci_position,eci_velocity):
@@ -279,10 +292,7 @@ def sat_ECF(theta_t,eci_position,eci_velocity):
     Siderial_rotation=[1,1,360/86164.091] #Degrees/s
     vel_rel=ECI_to_ECF.apply(eci_velocity-np.matmul(Siderial_rotation,eci_position))
     #km/s
-    global zTest_ECF_R, zTest_ECF_vel, zTest_ECF_vel_rel
-    zTest_ECF_R=pos_ECF
-    zTest_ECF_vel=pos_ECF
-    zTest_ECF_vel_rel=vel_ECF
+    
     
     
     
@@ -313,11 +323,7 @@ def station_ECF(station_longitude,station_latitude,station_elevation):
     
     #where station_body_poisitonh is the sat_ECF coordinates
     
-    #Low Level Debug Helper
-    global zTest_T_x,zTest_T_y,zTest_T_x
-    zTest_T_x=T_x
-    zTest_T_y=T_y
-    zTest_T_z=T_z
+    
     
     
     return [T_x,T_y,T_z]
@@ -501,9 +507,19 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
     #StationInstant, Times, and Links are class instances with their own attributes
     # Inputs: Station Instance Calculated, Satellite List, Time 
     
+    #Low Level Debug Helper
+    global zTest_Ecc_anom,zTest_ECI_R,zTest_ECI_v,zTest_ECF_R,zTest_ECF_vel
+    global zTest_ECF_vel_rel,zTest_T_x,zTest_T_y,zTest_T_z
     
-    
-    
+    zTest_Ecc_anom=[]
+    zTest_ECI_R=[]
+    zTest_ECI_v=[]
+    zTest_ECF_R=[]
+    zTest_ECF_vel=[]
+    zTest_ECF_vel_rel=[]
+    zTest_T_x=[]
+    zTest_T_y=[]
+    zTest_T_z=[]
     
     #We are assuming that in the next version of the code we will be iterating through Start and End times 
     #With a time step. This will be our Time value
@@ -531,6 +547,9 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
     Refepoch=referenceepoch_propagate(Tracking)
         #THETAN has been edited to input time_start_dt and Time_dt
     GMST=THETAN(Refepoch)
+    
+    global zTest_GMST_List
+    zTest_GMST_List=GMST
 
 #Iterates through satellite list first then for time 
 #creates list of 
@@ -542,6 +561,8 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
         [Mt_Mean_anomaly,Nt_anomaly_motion]=mean_anomaly_motion(Time_dt,SatList[p].refepoch,float(SatList[p].meanan),float(SatList[p].meanmo),float(SatList[p].ndot),float(SatList[p].n2dot))
         #degrees,
         ecc_anomaly=KeplerEqn(Mt_Mean_anomaly,SatList[p].eccn)
+        
+        
         #returns in radians
         mu=398600.4418 #km^3/s^2
         a=(mu/(2*np.pi*float(SatList[p].meanmo)/86400)**2)**(1/3)
@@ -572,6 +593,19 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
         v_rel_ti_list.append(v_rel_ti)
 
         time.append(Time_dt)
+        
+        
+        # Low Level Debugging Helper
+        zTest_Ecc_anom.append(ecc_anomaly)
+        
+        zTest_ECI_R.append(pos_ECI),zTest_ECI_R.append(vel_ECI)
+        zTest_ECF_R.append(pos_ECF),zTest_ECF_vel.append(vel_ECF),zTest_ECF_vel_rel.append(vel_rel_ECF)
+        zTest_T_x.append(Tx),zTest_T_y.append(Ty),zTest_T_z.append(Tz)
+        
+        
+        
+        
+        
       Time_dt=Time_dt+dt.timedelta(seconds=float(Tracking.timestep))
       #At the End change Time
       
@@ -752,7 +786,90 @@ def TrackingData(freq,Antennaeff,AntennaDia,R_ti):
     return Signal_loss
 
  
+   
+
     # In[]
+#       Debugging 
+    
+    
+    # In[]
+def STKout(EphemFile,StartString,time,Coord,position,velocity):
+    
+    #Asssuming StartString is the Start Time String
+    
+    #Here I interpreted the positon and velocity arrays as
+    # Postion Array:
+    #  X Y Z
+    
+    #opens or creates a file with the name EphemFile
+    file_1=open(EphemFile,"w+")
+    
+    #Creates a set of Strings that can be easily changed. 
+    
+    ScenarioEpochString="ScenarioEpoch \t"+StartString
+    CentralBody="Earth"
+    CentralBodyString="Central Body "+ CentralBody
+    CoordinateSystemString="CoordinateSystem "+Coord
+    NumofEphermis=len(time) #I don't know how to attain this number
+    
+    #Writing Header
+    file_1.write("stk.v.4.3 \n\nBEGIN Ephemeris \n\n")
+    file_1.write("NumberOfEpemerisPoints "+str(NumofEphermis)+"\n")
+    file_1.write(ScenarioEpochString+"\n")
+    file_1.write(CentralBodyString+"\n")
+    file_1.write(CoordinateSystemString+"\n")
+    file_1.write("EphemerisTimePosVel\n")
+    
+    #extracts values from position and velocity lists
+    X=[row[0] for row in position]
+    Y=[row[1] for row in position]
+    Z=[row[2] for row in position]
+    X_dot=[row[0] for row in velocity]
+    Y_dot=[row[1] for row in velocity]
+    Z_dot=[row[2] for row in velocity]
+    
+    i=0
+    while i<len(time):
+        
+        file_1.write('{0:15.14e} {1:15.14e} {2:15.14e} {3:15.14e} {4:15.14e} {6:15.14e} \n'.format(float(time[i]),float(X[i]),float(Y[i]),float(Z[i]),float(X_dot[i]),float(Y_dot[i]),float(Z_dot[i])))
+        #writing to file in formatted way
+        
+        
+        
+        # for i is in time, we iterate through the list to write in the values to the value
+        i=i+1
+        
+    file_1.write("\n\nEND Ephemeris")
+    file_1.close()
+
+# In[]
+def STKsp(PointingAngles,time):
+        
+        #We should have an input file name. I've provided one here to help
+        spFile="STKsp.sp"
+        
+        #opens file
+        file_2=open(spFile,"w+")
+        
+        NumofAttitudes=len(time) 
+        
+        #Writing Header
+        file_2.write("stk.v.4.3 \nBEGIN\tAttitude\n")
+        file_2.write("NumberOfAttitudePoints "+str(NumofAttitudes)+"\n")
+        file_2.write("AttitudeTimeAzElAngles\n")
+        AL=[row[0] for row in PointingAngles]
+        EL=[row[1] for row in PointingAngles]
+        i=0
+        while i<len(time):
+            file_2.write('{0:7.2f} {1:7.2f} {2:7.2f}\n'.format(float(time[i]),float(AL[i]),float(EL[i])))
+        # for i is in time, we iterate through the list to write in the values to the value
+            i=i+1
+            
+        #writing closer 
+        file_2.write("END Attitude")
+        file_2.close    
+
+ # In[]
 
 ##                  Main Function
 
@@ -768,9 +885,11 @@ Signal_loss=TrackingData(freq,Antennaeff,AntennaDia,R_ti)
 #Visibility creates a formatted list 
 [AOS_LOS_list]=Visibility(StationInstance,AZ,EL,time,Satnum,Signal_loss)
 
+# Debugging
+STKout('EphemFileExample.txt',str(Starttime),time,'Inertial',zTest_ECI_R,zTest_ECI_v)
 
 
-AZList=AZ
+
 #Outputs AZ in Rads
 
     # In[]
@@ -796,17 +915,6 @@ r=1.002737909350795+5.9006e-11*(T_u)-5.9e-15*(T_u)**2
 del_sec=(Starttime-Midtime).total_seconds()
 GMST_t=(GMST_00+360*r/86400*(del_sec))%360
 
-
-
-
-
-
-
-
-
-
-
-
 GMST=THETAN(Refepoch)
 Time_dt=dt.datetime.strptime(Tracking.starttime,'%Y-%m-%d-%H:%M:%S')
 p=17
@@ -818,6 +926,3 @@ mu=398600.4418 #km^3/s^2
 a=(mu/(2*np.pi*float(SatList[p].meanmo)/86400)**2)**(1/3)
 [pos_ECI,vel_ECI]=sat_ECI(SatList[p].eccn,KeplerEqn(SatList[p].meanan,SatList[p].eccn), \
         a,SatList[p].raan,SatList[p].argper,SatList[p].incl,Nt_anomaly_motion)
-
-    # In[]
-
