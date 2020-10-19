@@ -48,73 +48,65 @@ def doy(YR,MO,D):
 def referenceepoch_propagate(TrackingData):
     starttime=dt.datetime.strptime(TrackingData.starttime,'%Y-%m-%d-%H:%M:%S')
     endtime=dt.datetime.strptime(TrackingData.endtime,'%Y-%m-%d-%H:%M:%S')
+    timestep=float(TrackingData.timestep)
     Iterations=(endtime-starttime).total_seconds()/float(TrackingData.timestep)
-    refepoch_list=[]
     time=starttime
+    global time_list
+    time_list=[]
     
-    for i in range(0,int(Iterations)):
-        yearstring=str(time.year)[2:4]
-        dayfrac=round(((time.microsecond/8.6e+10)+(time.second/86400)+ \
-                          (time.minute/1440)+(time.hour/24)),4)
-        doy_nofrac=str(doy(time.year,time.month,time.day))
-        doystring=str(int(doy(time.year,time.month,time.day))+dayfrac)[0:13]
-        time=time+dt.timedelta(seconds=float(TrackingData.timestep))
+    time_list.append(time)
+    for i in range(0,int(Iterations-1)):
+        time=time+dt.timedelta(seconds=timestep)
+
+        
+        time_list.append(time)
         
         
-        if len(doy_nofrac)==3:
-            resultstring=yearstring+doystring
-        elif len(doy_nofrac)==2:
-            resultstring=yearstring+"0"+doystring
-        elif len(doy_nofrac)==1:
-            resultstring=yearstring+"00"+doystring
-            
-        
-            
-        
-        
-        
-        refepoch_list.append(resultstring)
-        
-        
-    return refepoch_list
+    return time_list
+
     
     # In[]
-def THETAN(refepoch):
+def THETAN(time_array):
+    #Change refepoch to dateobi
+    
     #Input is a refepoch array this dsoesn't make sense as Tracking Data contains an easily parsible 
     
     
     GMST_list=[]
     
     
-    J2000=dt.datetime.strptime('2000-01-01 12:00:00','%Y-%m-%d %H:%M:%S')
+    J2000=dt.datetime.strptime('2000-01-01 00:00:00','%Y-%m-%d %H:%M:%S')
     global Starttime
     Starttime=dt.datetime.strptime(Tracking.starttime,'%Y-%m-%d-%H:%M:%S')
-    Midtime=Starttime.replace(hour=0,minute=0,second=0)
-    D_u=(Midtime-J2000).days+(Midtime-J2000).seconds/86400
-    T_u=D_u/36525
-    GMST_00=(99.9677947+36000.7700631*T_u+0.00038793*T_u**2-2.6e-8*T_u**3)%360
+    #no need to 
+    
 
     
     
 
-    for i in range(0,len(refepoch)):
-        times=(refepoch_to_dt(refepoch[i]))
+    for i in range(0,len(time_array)):
         
+        
+        
+        Midtime=time_array[i].replace(hour=0,minute=0,second=0)
+    
+        D_u=(Midtime-J2000).days
+        T_u=D_u/36525
+        GMST_00=(99.9677947+36000.7700631*T_u+0.00038793*T_u**2-2.6e-8*T_u**3)%360
+        r=1.002737909350795+5.9006e-11*(T_u)-5.9e-15*(T_u)**2
         #Creates T mid for Observation Day
         #Notice how we replace hour,min and sec to 0. This makes the time midnight!
-        del_sec=(times-Midtime).total_seconds()
+        del_sec=(time_array[i]-Midtime).total_seconds()
         
 
-        D_u_2=(times-J2000).days+(times-J2000).seconds/86400
+        
 
-        T_u_2=D_u_2/36525
-
-        r=1.002737909350795+5.9006e-11*(T_u_2-T_u)-5.9e-15*(T_u_2-T_u)**2
+        
         GMST_t=(GMST_00+360*r/86400*(del_sec))%360
         
         GMST_list.append(GMST_t)
     
-    #Low Level Debug Helper
+    
     
         
     return GMST_list    
@@ -598,7 +590,7 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
         # Low Level Debugging Helper
         zTest_Ecc_anom.append(ecc_anomaly)
         
-        zTest_ECI_R.append(pos_ECI),zTest_ECI_R.append(vel_ECI)
+        zTest_ECI_R.append(pos_ECI),zTest_ECI_v.append(vel_ECI)
         zTest_ECF_R.append(pos_ECF),zTest_ECF_vel.append(vel_ECF),zTest_ECF_vel_rel.append(vel_rel_ECF)
         zTest_T_x.append(Tx),zTest_T_y.append(Ty),zTest_T_z.append(Tz)
         
@@ -829,9 +821,9 @@ def STKout(EphemFile,StartString,time,Coord,position,velocity):
     Z_dot=[row[2] for row in velocity]
     
     i=0
-    while i<len(time):
+    for i in range(0,len(time)):
         
-        file_1.write('{0:15.14e} {1:15.14e} {2:15.14e} {3:15.14e} {4:15.14e} {6:15.14e} \n'.format(float(time[i]),float(X[i]),float(Y[i]),float(Z[i]),float(X_dot[i]),float(Y_dot[i]),float(Z_dot[i])))
+        file_1.write('{0:15} {1:15.14e} {2:15.14e} {3:15.14e} {4:15.14e} {6:15.14e} \n'.format((time[i]),float(X[i]),float(Y[i]),float(Z[i]),float(X_dot[i]),float(Y_dot[i]),float(Z_dot[i])))
         #writing to file in formatted way
         
         
