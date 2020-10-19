@@ -21,16 +21,16 @@ from scipy.spatial.transform import Rotation as R
 
     # In[]
 
-
+#Converts time in TLE format to Datetime Format
 def refepoch_to_dt(refepoch):
-    Epochyrday = dt.datetime.strptime((refepoch[:4]),'%y%j')
+    Epochyrday = dt.datetime.strptime((refepoch[0:5]),'%y%j')
     dfrac = np.modf(np.float(refepoch))[0]
     dfracdt = dt.timedelta(microseconds=np.int(dfrac*24*3600*10**6))
     Epochdt = Epochyrday + dfracdt
     return Epochdt
 
     # In[]
-
+# Finds the Day of Year from the Year Month and Day parameters
 def doy(YR,MO,D):
     if len(str(MO))==1:
         MO='0'+ str(MO)
@@ -44,25 +44,29 @@ def doy(YR,MO,D):
     return DOY
     
     # In[]
+# This creates a list of 
 def referenceepoch_propagate(TrackingData):
     starttime=dt.datetime.strptime(TrackingData.starttime,'%Y-%m-%d-%H:%M:%S')
     endtime=dt.datetime.strptime(TrackingData.endtime,'%Y-%m-%d-%H:%M:%S')
     Iterations=(endtime-starttime).total_seconds()/float(TrackingData.timestep)
     refepoch_list=[]
     time=starttime
-    print(Iterations)
+    
     for i in range(0,int(Iterations)):
         yearstring=str(time.year)[2:4]
-        doystring=str(doy(time.year,time.month,time.day))
-        dayfracstring=str((time.microsecond/8.6e+10)+(time.second/86400)+ \
-                          (time.minute/1440)+(time.hour/24))[0:10]
+        dayfrac=round(((time.microsecond/8.6e+10)+(time.second/86400)+ \
+                          (time.minute/1440)+(time.hour/24)),4)
+        doy_nofrac=str(doy(time.year,time.month,time.day))
+        doystring=str(int(doy(time.year,time.month,time.day))+dayfrac)[0:13]
         time=time+dt.timedelta(seconds=float(TrackingData.timestep))
-        if len(doystring)==3:
-            resultstring=yearstring+doystring+dayfracstring
-        elif len(doystring)==2:
-            resultstring=yearstring+" "+doystring+dayfracstring
-        else:
-            resultstring=yearstring+" "+doystring+dayfracstring
+        
+        
+        if len(doy_nofrac)==3:
+            resultstring=yearstring+doystring
+        elif len(doy_nofrac)==2:
+            resultstring=yearstring+"0"+doystring
+        elif len(doy_nofrac)==1:
+            resultstring=yearstring+"00"+doystring
             
         
             
@@ -77,37 +81,41 @@ def referenceepoch_propagate(TrackingData):
     # In[]
 def THETAN(refepoch):
     #Input is a refepoch array this dsoesn't make sense as Tracking Data contains an easily parsible 
-    start_time_dt=refepoch_to_dt(refepoch[0])
+    
     
     GMST_list=[]
     
+    
     J2000=dt.datetime.strptime('2000-01-01 12:00:00','%Y-%m-%d %H:%M:%S')
+    Starttime=dt.datetime.strptime(Tracking.starttime,'%Y-%m-%d-%H:%M:%S')
+    Midtime=Starttime.replace(hour=0,minute=0,second=0)
+    D_u=(Midtime-J2000).days+(Midtime-J2000).seconds/86400
+    T_u=D_u/36525
+    GMST_00=(99.9677947+36000.7700631*T_u+0.00038793*T_u**2-2.6e-8*T_u**3)%360
+
+    
+    
+
     for i in range(0,len(refepoch)):
         times=(refepoch_to_dt(refepoch[i]))
-        t=times-J2000
+        
         #Creates T mid for Observation Day
         #Notice how we replace hour,min and sec to 0. This makes the time midnight!
-        t_mid_dt=start_time_dt
-        t_mid_dt=t_mid_dt.replace(hour=0,minute=0,second=0)
-    
-    
-    
-    
-    
-        t_mid=t_mid_dt-J2000
-        D_u=(t_mid_dt-J2000).days + (t_mid_dt-J2000).seconds/86400 #The number of days since J2000 to t_mid
-    
-        T_u=D_u/36525
-        GMST_00=99.9677947+36000.77006361*T_u+0.00038793*(T_u**2)-(2.6*10**-8)*T_u**3
-    #Unit: Seconds, will reduce later
-    #Note: degrees seconds
-    
-        r=(1.002737909350795+5.9006*10**-11*T_u-(5.9*10**-15)*T_u**2)/86400
-    
-        delta_seconds=(t-t_mid).total_seconds()
-        GMST_t=(GMST_00+(360*r*(delta_seconds)))%360
+        del_sec=(times-Midtime).total_seconds()
+        
+
+        D_u_2=(times-J2000).days+(times-J2000).seconds/86400
+
+        T_u_2=D_u_2/36525
+
+        r=1.002737909350795+5.9006e-11*(T_u_2-T_u)-5.9e-15*(T_u_2-T_u)**2
+        GMST_t=(GMST_00+360*r/86400*(del_sec))%360
         
         GMST_list.append(GMST_t)
+    
+    #Low Level Debug Helper
+    global zTest_GMST_List
+    zTest_GMST_List=GMST_list
         
     return GMST_list    
 
@@ -137,6 +145,10 @@ def mean_anomaly_motion(time,ts_sat_epoch,M0_mean_anomaly,n_mean_motion, \
 
     #Removing Mutlples
     Mt_mean_anomaly=Mt_mean_anomaly%360
+    
+    # Low Level Debug Helper
+    global zTest_Mt_Mean_anomaly
+    zTest_Mt_Mean_anomaly=Mt_mean_anomaly
     
     return Mt_mean_anomaly,Nt_mean_anomaly_motion
 
@@ -171,14 +183,19 @@ def KeplerEqn(Mt_mean_anomaly,eccentricity):
     
     #Calculates Further Iterations
     while Del_E_mag > permitted_error:
-        i=i+1
+        
         Del_M_.append(float(E_[i])-e*math.sin((E_[i]))-float(Mt_mean_anomaly))
         Del_E_.append(Del_M_[i]/(1-e*math.cos(E_[i])))
         Del_E_mag=abs(Del_E_[i])
         (Del_E_mag)
         E_.append(E_[i]+Del_E_[i])
+        i=i+1
         
-       
+     
+   # Low Level debug Helper
+    global zTest_Ecc_anom
+    zTest_Ecc_anom=E_[i+1]%(2*math.pi)
+        
     return E_[i+1]%(2*math.pi) #reduces Eccentric Anom 
 #! Returns in Radians
     # In[]
@@ -215,7 +232,11 @@ def perifocal(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascendi
     v_pz=0
     v_per=[v_px,v_py,v_pz]
     #km/s
-    print("Perifocal:",R_per,v_per)
+    
+    # Low Level Debug Helper
+    global zTest_R_per, zTest_v_per
+    zTest_R_per=R_per
+    zTest_v_per=v_per 
     
     return R_per,v_per
     # In[]
@@ -225,7 +246,7 @@ def sat_ECI(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascending
     
     #Finds Perifocal Components
     r_per,v_per=perifocal(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascending_node,omega_argument_periapsis,inclination,nt_mean_motion)
-    print("Position and Velocity in Perifocal",r_per,v_per)
+    
     
     #Creates transformation
     Per_to_ECI=R.from_euler('ZXZ',[-float(omega_longitude_ascending_node),-float(inclination),-float(omega_argument_periapsis)],degrees=True)
@@ -233,29 +254,36 @@ def sat_ECI(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascending
     pos_ECI=(Per_to_ECI.apply(r_per)).tolist()
     vel_ECI=(Per_to_ECI.apply(v_per)).tolist()
     
-    print("Position in ECI",pos_ECI)
+    global zTest_ECI_R, zTest_ECI_v
+    zTest_ECI_R=pos_ECI
+    zTest_ECI_v=vel_ECI
     
     vel_ECI=(Per_to_ECI.apply(v_per)).tolist()
     return pos_ECI,vel_ECI
     # In[]
 def sat_ECF(theta_t,eci_position,eci_velocity):
     
-    print("This is the intake ECI Position",eci_position)
+    
     #Creates rotational transformation
     ECI_to_ECF=R.from_euler('Z',[float(theta_t)], degrees=True)
     
     #Applies Rotational Transformation
     pos_ECF=ECI_to_ECF.apply(eci_position).tolist()[0] # had to perform weird 
     #weird conversion to get back to list
-    print(pos_ECF)
+    
     vel_ECF=ECI_to_ECF.apply(eci_velocity).tolist()[0]
     #km/s
     
-    print("This is the Position in ECI",eci_position)
+    
     #Relative Velocity
     Siderial_rotation=[1,1,360/86164.091] #Degrees/s
     vel_rel=ECI_to_ECF.apply(eci_velocity-np.matmul(Siderial_rotation,eci_position))
     #km/s
+    global zTest_ECF_R, zTest_ECF_vel, zTest_ECF_vel_rel
+    zTest_ECF_R=pos_ECF
+    zTest_ECF_vel=pos_ECF
+    zTest_ECF_vel_rel=vel_ECF
+    
     
     
     return pos_ECF,vel_ECF,vel_rel
@@ -285,6 +313,13 @@ def station_ECF(station_longitude,station_latitude,station_elevation):
     
     #where station_body_poisitonh is the sat_ECF coordinates
     
+    #Low Level Debug Helper
+    global zTest_T_x,zTest_T_y,zTest_T_x
+    zTest_T_x=T_x
+    zTest_T_y=T_y
+    zTest_T_z=T_z
+    
+    
     return [T_x,T_y,T_z]
     
     
@@ -300,14 +335,14 @@ def range_ECF2topo(station_body_position, \
     station_latitude=float(station_latitude)*math.pi/180
     #input as Rads only
     
-    print("This is Station Body Positon",station_body_position)
+    
     
     #assuming that station body positon is [Tx,Ty,Tz]
     
     R=[sat_ecf_position[0]-station_body_position[0],\
        sat_ecf_position[1]-station_body_position[1],\
         sat_ecf_position[2]-station_body_position[2]]
-    print("This is R:  ",R)
+    
     
     #Intializes Transformation Matrix
     T_ECF_to_topo=[[-math.sin(station_longitude), \
@@ -319,8 +354,8 @@ def range_ECF2topo(station_body_position, \
                                                  math.sin(station_longitude)* \
                                                  math.cos(station_latitude), \
                                                  math.sin(station_latitude)]]
-    print("This is Transformation: ",T_ECF_to_topo)
-    print("This is R_Transpose: ",(R))
+    
+    
     #Transform Range Vector
     R_ti=np.matmul(np.array(R),np.array(T_ECF_to_topo))
     
@@ -334,9 +369,9 @@ def range_ECF2topo(station_body_position, \
     # In[]
 def range_topo2look_angle(range_topo_position,range_topo_velocity):
     R=range_topo_position
-    print("REange Topo position",range_topo_position[0])
+    
     v_rel=range_topo_velocity
-    print("This is Topo Range",range_topo_position)
+    
     #Calculates the AZ and EL
     AZ=math.atan(R[0]/R[1])
     EL=math.atan(R[2]/(math.sqrt(R[0]**2+R[1]**2)))
@@ -347,7 +382,7 @@ def range_topo2look_angle(range_topo_position,range_topo_velocity):
     R_xy=[R[0],R[1]]
     #In Software Specification Rxy is [tx ty]{Rtx;Rty} which would give a result of a singular value
     #Here we assume the Professor meant R_xy= the x and y components of R
-    print(v_rel)
+    
     v_xy=[v_rel[0],v_rel[1]]
     
     #Calculates rates of AZ and EL
@@ -478,7 +513,7 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
     #Assuming that timesteps is in seconds 
     Time_iterations=(Time_end_dt-Time_start_dt).total_seconds()/float(Tracking.timestep)
     
-    print("This is Time Iteration", Time_iterations)
+    
     Time_dt=Time_start_dt
     #initializing empty arrays
     time=[]
@@ -556,7 +591,7 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
     return AZ_list,EL_list,Rate_of_AZ_list,Rate_of_EL_list,R_ti_list,v_rel_ti_list,time,Satnum_list
 
     # In[]
-def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
+def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
   
   
   #avail=available for viewing
@@ -575,6 +610,9 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
   SatNum_LOS=[]
   Satnum_iteration=max(Satnum_list)+1
   time_delta=time[1]-time[0]
+  Signal_lost_AOS=[]
+  Signal_lost_LOS=[]
+  Signal_lost_avail=[]
   
   
 
@@ -588,7 +626,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
     AZ_muth_limit=float(ThisStationLimit[0])*math.pi/180
     EL_lim_max=float(ThisStationLimit[2])*math.pi/180
     EL_lim_min=float(ThisStationLimit[1])*math.pi/180
-    print(AZ_muth_limit,"\t",EL_lim_max,"\t",EL_lim_min,"\t")
+    
     
     for j in range(0,len(AZ_list)):
       
@@ -608,8 +646,8 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
             if i > 0:
                 
                 for k in range(0,len(Times_LOS)):
-                    print (time[j]-time_delta)
-                    if time[j]-time_delta == Times_LOS[k] and Satnum[j]== SatNum_LOS[k]:
+                    
+                    if time[j] == Times_LOS[k] and Satnum[j]== SatNum_LOS[k]:
                         append=0
                         del Times_LOS[k]
                         del SatNum_LOS[k]
@@ -623,6 +661,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
                     EL_AOS.append(EL_list[j])
                     Times_AOS.append(time[j])
                     SatNum_AOS.append(Satnum_list[j])
+                    Signal_lost_AOS.append(Signal_lost[j])
                         
                 #Then no AOS, LOS
                 
@@ -632,6 +671,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
                 EL_AOS.append(EL_list[j])
                 Times_AOS.append(time[j])
                 SatNum_AOS.append(Satnum_list[j])
+                Signal_lost_AOS.append(Signal_lost[j])
                 
                 
                 
@@ -639,6 +679,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
         EL_avail.append(EL_list[j])
         Times_avail.append(time[j])
         Satnum_avail.append(Satnum_list[j])
+        Signal_lost_avail.append(Signal_lost[j])
       else:
           # Satellite Unavailable
           
@@ -651,79 +692,18 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list):
               EL_LOS.append(EL_list[j])
               Times_LOS.append(time[j])
               SatNum_LOS.append(Satnum_list[j])
+              Signal_lost_LOS.append(Signal_lost[j])
+              
+              
 
     
-  AOS_List=[AZ_AOS,EL_AOS,Times_AOS,SatNum_AOS]
-  LOS_List=[AZ_LOS,EL_LOS,Times_LOS,SatNum_LOS]
+  AOS_List=[AZ_AOS,EL_AOS,Times_AOS,SatNum_AOS,Signal_lost_AOS]
+  LOS_List=[AZ_LOS,EL_LOS,Times_LOS,SatNum_LOS,Signal_lost_LOS]
 #Creates a list of Available Azimuth, Elevation, Times and Satnum available 
   
   
   return AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List
 
-    # In[]
-def Pointing_2(StnInstance,AZ_list,EL_list,time,Satnum_list):
-  
-  i=0
-
-  #avail=available for viewing
-  AZ_avail=[]
-  EL_avail=[]
-  Times_avail=[]
-  Satnum_avail=[]
-  #creates blanks arrays to be filled
-  AZ_AOS=[]
-  EL_AOS=[]
-  Times_AOS=[]
-  SatNum_AOS=[]
-  AZ_LOS=[]
-  EL_LOS=[]
-  Times_LOS=[]
-  SatNum_LOS=[]
-  
-  
-
-  
-    
-  for j in range(0,len(AZ_list)):
-        while i < int(StnInstance.az_el_nlim):
-      
-      # For Each iteration of the Station Instation Limits
-            ThisStationLimit=StnInstance.az_el_lim[i].split(",")
-    
-    # Covnerts Limits from Degrees to Rads
-            AZ_muth_limit=float(ThisStationLimit[0])*math.pi/180
-            EL_lim_max=float(ThisStationLimit[2])*math.pi/180
-            EL_lim_min=float(ThisStationLimit[1])*math.pi/180
-            if AZ_list[j] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j] and EL_list[j] > float(EL_lim_min):
-        #compares Azimuth and Elevations to Limit
-          
-        #Compares to Previous Value
-          # If previous value is not in 
-                if j > 0 and  Satnum_list[j] == Satnum_list[j-1] and AZ_list[j-1] < float(AZ_muth_limit) or float(EL_lim_max) < EL_list[j-1] or EL_list[j-1] < float(EL_lim_min):
-                    
-                    AZ_AOS.append(AZ_list[j])
-                    EL_AOS.append(EL_list[j])
-                    Times_AOS.append(time[j])
-                    SatNum_AOS.append(Satnum_list[j])
-            
-                AZ_avail.append(AZ_list[j])
-                EL_avail.append(EL_list[j])
-                Times_avail.append(time[j])
-                Satnum_avail.append(Satnum_list[j])
-            else:
-                    if j > 0 and Satnum_list[j]==Satnum_list[j-1] and AZ_list[j-1] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j-1] and EL_list[j-1] > float(EL_lim_min):
-                        AZ_LOS.append(AZ_list[j])
-                        EL_LOS.append(EL_list[j])
-                        Times_LOS.append(time[j])
-                        SatNum_LOS.append(Satnum_list[j])
-            i=i+1
-    
-  AOS_List=[AZ_AOS,EL_AOS,Times_AOS,SatNum_AOS]
-  LOS_List=[AZ_LOS,EL_LOS,Times_LOS,SatNum_LOS]
-#Creates a list of Available Azimuth, Elevation, Times and Satnum available 
-  
-  
-  return AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List
 
     # In[]
 #def Link_Calculations(LinkData):
@@ -735,17 +715,41 @@ def linkcal(linkdat):
   Antennaeff=Linkcalcfile.readline()
   AntennaDia=Linkcalcfile.readline()
   Linkcalcfile.close
-  signalloss=20*math.log(10,4*math.pi*(float(AntennaDia))/(3.0e8*float(frequency)*1e6))
-  return signalloss
+  #signalloss=20*math.log(10,4*math.pi*(float(AntennaDia))/(3.0e8*float(frequency)*1e6))
+  return frequency,Antennaeff,AntennaDia
 
     # In[]
-def Visibility(StationInstance,AZ,EL,times,Satnum):
+def Visibility(StationInstance,AZ,EL,times,Satnum,Signal_lost):
     #[AZ_avail,EL_avail,Times_avail,Satnum_avail]=Pointing(StationInstance,AZ,EL,Satnum)
+    AOS=Pointing(StationInstance,AZ,EL,times,Satnum,Signal_lost)[4]
+    LOS=Pointing(StationInstance,AZ,EL,times,Satnum,Signal_lost)[5]
+    Satnum_AOS=AOS[3]
+    Satnum_LOS=LOS[3]
+    Sat_Signal_Lost=AOS[4]
+    
+    Sat_AOS_Time=AOS[2]
+    Sat_LOS_Time=LOS[2]
+    AOS_LOS_list=[]
+    for i in range(0,len(Satnum_AOS)):
+        for j in range(0,len(Satnum_LOS)):
+            if Satnum_AOS[i] == Satnum_LOS[j]:
+                Templist=[Satnum_AOS[i],SatList[Satnum_AOS[i]].name,Sat_AOS_Time[i],Sat_LOS_Time[j],Sat_Signal_Lost[i]]
+                #creates a temporary list to store Sat number,Sat list name ,AOS time,LOS time and 
+                AOS_LOS_list.append(Templist)
+                
+        
     
     
     
     
-    return
+    return AOS_LOS_list
+    # In[]
+def TrackingData(freq,Antennaeff,AntennaDia,R_ti):
+    Signal_loss=[]
+    for i in range(0,len(R_ti)):
+        R=np.linalg.norm(R_ti[i])
+        Signal_loss.append(20*math.log(10,4*math.pi*(float(R))/(3.0e8*float(freq)*1e6)))
+    return Signal_loss
 
  
     # In[]
@@ -755,11 +759,17 @@ def Visibility(StationInstance,AZ,EL,times,Satnum):
 
 #Assuming That The Use has alreadu initialized all necessary functions and classes
 # The Main Program can be deduced to this
-[StationInstance,SatList,Tracking,LinkData]=User_Input_parser_Call(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\Station.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\gps-ops.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\TrackingData.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
+[StationInstance,SatList,Tracking,LinkData]=User_Input_parser_Call(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\Station.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\MiniQuiz2\gps-ops.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\MiniQuiz2\TrackingData.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
 [AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum]=Sat_pos_velCall(StationInstance,SatList,Tracking)
 
-#[AOS,LOS]=Visibility(StationInstance,AZ,EL,time,Satnum)
-[AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List]=Pointing(StationInstance,AZ,EL,time,Satnum)
+[freq,Antennaeff,AntennaDia]=linkcal(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
+Signal_loss=TrackingData(freq,Antennaeff,AntennaDia,R_ti)
+[AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List]=Pointing(StationInstance,AZ,EL,time,Satnum,Signal_loss)
+#Visibility creates a formatted list 
+[AOS_LOS_list]=Visibility(StationInstance,AZ,EL,time,Satnum,Signal_loss)
+
+
+
 AZList=AZ
 #Outputs AZ in Rads
 
@@ -772,7 +782,31 @@ signalloss=linkcal(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\Reference
 #                                           Testing Cell
 
 Refepoch=referenceepoch_propagate(Tracking)
-        #THETAN has been edited to input time_start_dt and Time_dt
+#THETAN has been edited to input time_start_dt and Time_dt
+#Tracking is Trackinginstance data
+Starttime=dt.datetime.strptime(Tracking.starttime,'%Y-%m-%d-%H:%M:%S')
+Midtime=Starttime.replace(hour=0,minute=0,second=0)
+J2000=dt.datetime.strptime('2000-01-01 12:00:00','%Y-%m-%d %H:%M:%S')
+D_u=(Midtime-J2000).days+(Midtime-J2000).seconds/86400
+T_u=D_u/36252
+D_u_2=(Starttime-J2000).days+(Starttime-J2000).seconds/86400
+T_u_2=D_u_2/36525
+GMST_00=(99.9677947+36000.7700631*T_u+0.00038793*T_u**2-2.6e-8*T_u**3)%360
+r=1.002737909350795+5.9006e-11*(T_u)-5.9e-15*(T_u)**2
+del_sec=(Starttime-Midtime).total_seconds()
+GMST_t=(GMST_00+360*r/86400*(del_sec))%360
+
+
+
+
+
+
+
+
+
+
+
+
 GMST=THETAN(Refepoch)
 Time_dt=dt.datetime.strptime(Tracking.starttime,'%Y-%m-%d-%H:%M:%S')
 p=17
@@ -784,3 +818,6 @@ mu=398600.4418 #km^3/s^2
 a=(mu/(2*np.pi*float(SatList[p].meanmo)/86400)**2)**(1/3)
 [pos_ECI,vel_ECI]=sat_ECI(SatList[p].eccn,KeplerEqn(SatList[p].meanan,SatList[p].eccn), \
         a,SatList[p].raan,SatList[p].argper,SatList[p].incl,Nt_anomaly_motion)
+
+    # In[]
+
