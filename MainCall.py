@@ -130,11 +130,11 @@ def mean_anomaly_motion(time,ts_sat_epoch,M0_mean_anomaly,n_mean_motion, \
     
     
     Mt_mean_anomaly=M0_mean_anomaly+ \
-        n_mean_motion*(360*t/86400)+360*(n_dot_mean_motion)*(t/86400)**2+ \
-        360*(n_2dots_mean_motion)*(t/86400)**3
+        n_mean_motion*(360*t/86400)+360*(n_dot_mean_motion/2)*(t/86400)**2+ \
+        360*(n_2dots_mean_motion/6)*(t/86400)**3
     Nt_mean_anomaly_motion=n_mean_motion* \
-        (360*t/86400) + 2*360*(n_dot_mean_motion)*(t/86400**2)+ \
-        3*360*(n_2dots_mean_motion)*(t**2/86400**3)
+        (360*t/86400) + 2*360*(n_dot_mean_motion/2)*(t/86400**2)+ \
+        3*360*(n_2dots_mean_motion/6)*(t**2/86400**3)
 
     #Removing Mutlples
     Mt_mean_anomaly=Mt_mean_anomaly%360
@@ -162,7 +162,7 @@ def KeplerEqn(Mt_mean_anomaly,eccentricity):
     #Example Permitted Error
     
     
-    Mt_mean_anomaly=float(Mt_mean_anomaly)*math.pi/180
+    Mt_mean_anomaly=np.deg2rad(Mt_mean_anomaly)
     #Converts to Radians
     
     e=float(eccentricity)
@@ -186,8 +186,8 @@ def KeplerEqn(Mt_mean_anomaly,eccentricity):
     #Calculates Further Iterations
     while Del_E_mag > permitted_error:
         
-        Del_M_.append(float(E_[i])-e*math.sin((E_[i]))-float(Mt_mean_anomaly))
-        Del_E_.append(Del_M_[i]/(1-e*math.cos(E_[i])))
+        Del_M_.append(float(E_[i])-e*math.sind((E_[i]))-float(Mt_mean_anomaly))
+        Del_E_.append(Del_M_[i]/(1-e*math.cosd(E_[i])))
         Del_E_mag=abs(Del_E_[i])
         (Del_E_mag)
         E_.append(E_[i]+Del_E_[i])
@@ -197,8 +197,8 @@ def KeplerEqn(Mt_mean_anomaly,eccentricity):
    
     
         
-    return E_[i+1]%(2*math.pi) #reduces Eccentric Anom 
-#! Returns in Radians
+    return np.degrees(E_[i+1]%(2*math.pi)) #reduces Eccentric Anom 
+#! Returns in degrees
     # In[]
 def perifocal(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascending_node, \
               omega_argument_periapsis,inclination,nt_mean_motion):
@@ -214,9 +214,15 @@ def perifocal(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascendi
     inclination=float(inclination)
     nt_mean_motion=float(nt_mean_motion)
     
+    ecc_anomaly=np.deg2rad(ecc_anomaly)
+    
+    
     #Calculating True Anomaly
     true_anom=2*(math.atan(math.sqrt((1+eccentricity)/ \
                                      (1-eccentricity))*math.tan(ecc_anomaly)))
+        #radians
+        
+        
     #Calculating R and its components
     r=a_semi_major_axis*(1-eccentricity**2)/(1+eccentricity*math.cos(true_anom))
     r_px=r*math.cos(true_anom)
@@ -552,11 +558,11 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
         
         
         [Mt_Mean_anomaly,Nt_anomaly_motion]=mean_anomaly_motion(Time_dt,SatList[p].refepoch,float(SatList[p].meanan),float(SatList[p].meanmo),float(SatList[p].ndot),float(SatList[p].n2dot))
-        #degrees,
+        #degrees,rev/day
         ecc_anomaly=KeplerEqn(Mt_Mean_anomaly,SatList[p].eccn)
         
         
-        #returns in radians
+        
         mu=398600.4418 #km^3/s^2
         a=(mu/(2*np.pi*float(SatList[p].meanmo)/86400)**2)**(1/3)
         [pos_ECI,vel_ECI]=sat_ECI(SatList[p].eccn,ecc_anomaly, \
