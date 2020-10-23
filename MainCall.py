@@ -910,6 +910,19 @@ def AOS_csvwriter(filename,AOS_LOS_List):
        
         csv_file.close    
         return 
+    
+# In[]
+def AZ_EL_csvwriter(filename,Satnum_avail,AZ_avail,EL_avail,Time_Avail):
+    with open(filename,mode='w+',newline='') as csv_file:
+        
+        csv_writer=csv.writer(csv_file,delimiter=',',quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        csv_writer.writerow(["Sat Name","Azimuth(rads)","Elevation(rads)","Time"])
+        for s in range(0,len(Satnum_avail)):
+            
+            csv_writer.writerow([SatList[Satnum_avail[s]].name,AZ_avail[s],EL_avail[s],Time_Avail[s]])
+       
+        csv_file.close    
+        return
  # In[]
 
 ##                  Main Function
@@ -926,47 +939,17 @@ Signal_loss=TrackingData(freq,Antennaeff,AntennaDia,R_ti)
 #Visibility creates a formatted list 
 AOS_LOS_list=Visibility(StationInstance,AZ,EL,time,Satnum,Signal_loss)
 
-#writing to a csv file
 
+#writing to a csv file
 Master_csvwriter("Master.csv",AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean)
 AOS_csvwriter("AOS_LOS.csv",AOS_LOS_list)
-#AZ_EL_csvwriter("AZ_EL.csv",)
+AZ_EL_csvwriter("AZ_EL.csv",Satnum_avail,AZ_avail,EL_avail,Times_avail)
+#Outputs AZ in Rads
+
+
 # Debugging
 STKout('EphemFileExample.txt',str(Starttime),time,'Inertial',zTest_ECI_R,zTest_ECI_v)
 
 
 
-#Outputs AZ in Rads
 
-    # In[]
-
-
-    # In[]
-#                                           Testing Cell
-
-Refepoch=referenceepoch_propagate(Tracking)
-#THETAN has been edited to input time_start_dt and Time_dt
-#Tracking is Trackinginstance data
-Starttime=dt.datetime.strptime(Tracking.starttime,'%Y-%m-%d-%H:%M:%S')
-Midtime=Starttime.replace(hour=0,minute=0,second=0)
-J2000=dt.datetime.strptime('2000-01-01 12:00:00','%Y-%m-%d %H:%M:%S')
-D_u=(Midtime-J2000).days+(Midtime-J2000).seconds/86400
-T_u=D_u/36252
-D_u_2=(Starttime-J2000).days+(Starttime-J2000).seconds/86400
-T_u_2=D_u_2/36525
-GMST_00=(99.9677947+36000.7700631*T_u+0.00038793*T_u**2-2.6e-8*T_u**3)%360
-r=1.002737909350795+5.9006e-11*(T_u)-5.9e-15*(T_u)**2
-del_sec=(Starttime-Midtime).total_seconds()
-GMST_t=(GMST_00+360*r/86400*(del_sec))%360
-
-GMST=THETAN(Refepoch)
-Time_dt=dt.datetime.strptime(Tracking.starttime,'%Y-%m-%d-%H:%M:%S')
-p=17
-[Mt_Mean_anomaly,Nt_anomaly_motion]=mean_anomaly_motion(Time_dt,SatList[p].refepoch,float(SatList[p].meanan),float(SatList[p].meanmo),float(SatList[p].ndot),float(SatList[p].n2dot))
-        #degrees,
-ecc_anomaly=KeplerEqn(Mt_Mean_anomaly,SatList[p].eccn)
-        #returns in radians
-mu=398600.4418 #km^3/s^2
-a=(mu/(2*np.pi*float(SatList[p].meanmo)/86400)**2)**(1/3)
-[pos_ECI,vel_ECI]=sat_ECI(SatList[p].eccn,KeplerEqn(SatList[p].meanan,SatList[p].eccn), \
-        a,SatList[p].raan,SatList[p].argper,SatList[p].incl,Nt_anomaly_motion)
