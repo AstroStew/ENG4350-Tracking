@@ -117,24 +117,25 @@ def mean_anomaly_motion(time,ts_sat_epoch,M0_mean_anomaly,n_mean_motion, \
                         n_dot_mean_motion,n_2dots_mean_motion):
     
     #Assume Reference Epcoh is in TLE format
-    refepoch=ts_sat_epoch
-    Epochyrday = dt.datetime.strptime(refepoch[:4],'%y%j')
-    dfrac = np.modf(np.float(refepoch))[0]
-    dfracdt = dt.timedelta(microseconds=np.int(dfrac*24*3600*10**6))
-    Epochdt = Epochyrday + dfracdt
+    refepoch=str(ts_sat_epoch)
+    Epochdt=refepoch_to_dt(refepoch)
     
+    
+    Epochdt_list.append(Epochdt)
     #assume Time is datetime object
     
-    t=(time-Epochdt).total_seconds()
+    t=((time-Epochdt).total_seconds())
+    t_list.append(t)
+    
     
     
     
     Mt_mean_anomaly=M0_mean_anomaly+ \
-        n_mean_motion*(360*t/86400)+360*(n_dot_mean_motion/2)*(t/86400)**2+ \
-        360*(n_2dots_mean_motion/6)*(t/86400)**3
+        n_mean_motion*(360*t/86400)+360*(n_dot_mean_motion/2)*((t/86400)**2)+ \
+        360*(n_2dots_mean_motion/6)*((t/86400)**3)
     Nt_mean_anomaly_motion=n_mean_motion* \
-        (360*t/86400) + 2*360*(n_dot_mean_motion/2)*(t/86400**2)+ \
-        3*360*(n_2dots_mean_motion/6)*(t**2/86400**3)
+        (360*t/86400) + 2*360*(n_dot_mean_motion/2)*(t/(86400**2))+ \
+        3*360*(n_2dots_mean_motion/6)*(t**2/(86400**3))
 
     #Removing Mutlples
     Mt_mean_anomaly=Mt_mean_anomaly%360
@@ -186,8 +187,8 @@ def KeplerEqn(Mt_mean_anomaly,eccentricity):
     #Calculates Further Iterations
     while Del_E_mag > permitted_error:
         
-        Del_M_.append(float(E_[i])-e*math.sind((E_[i]))-float(Mt_mean_anomaly))
-        Del_E_.append(Del_M_[i]/(1-e*math.cosd(E_[i])))
+        Del_M_.append(float(E_[i])-e*math.sin((E_[i]))-float(Mt_mean_anomaly))
+        Del_E_.append(Del_M_[i]/(1-e*math.cos(E_[i])))
         Del_E_mag=abs(Del_E_[i])
         (Del_E_mag)
         E_.append(E_[i]+Del_E_[i])
@@ -541,6 +542,11 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
     v_rel_ti_list=[]
     Satnum_list=[]
     #Satnum List helps with identifying the Satellite
+    
+    global Epochdt_list
+    Epochdt_list=[]
+    global t_list
+    t_list=[]
     
     #Propagtes data for THETAN
     Refepoch=referenceepoch_propagate(Tracking)
