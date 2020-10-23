@@ -892,12 +892,23 @@ def Master_csvwriter(filename,AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Sat
         for s in range(0,len(AZ)):
            csv_writer.writerow([zTest_R_per[s],zTest_v_per[s],zTest_ECI_R[s],zTest_ECI_v[s],zTest_ECF_R[s],zTest_ECF_vel_rel[s],AZ[s],EL[s],Rate_of_AZ[s],Rate_of_EL[s],R_ti[s],v_rel_ti[s],time[s],SatList[Satnum[s]].name,Avail_list[s],AOS_List_boolean[s],LOS_List_boolean[s]])
        
-        csv_file.close
-    
-    
+        csv_file.close    
         return 
 # This functions converts all the lists into a csv file which can be read into excel and understood easily 
 
+
+ # In[]
+def AOS_csvwriter(filename,AOS_LOS_List):
+    with open(filename,mode='w+',newline='') as csv_file:
+        
+        csv_writer=csv.writer(csv_file,delimiter=',',quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        csv_writer.writerow(["Sat No.","Sat Name","AOS Time","LOS Time","Min Expected Level",])
+        for s in range(0,len(AOS_LOS_List)):
+            AOS_instance=AOS_LOS_List[s]
+            csv_writer.writerow([AOS_instance[0],AOS_instance[1],AOS_instance[2],AOS_instance[3],AOS_instance[4]])
+       
+        csv_file.close    
+        return 
  # In[]
 
 ##                  Main Function
@@ -917,7 +928,7 @@ AOS_LOS_list=Visibility(StationInstance,AZ,EL,time,Satnum,Signal_loss)
 #writing to a csv file
 
 Master_csvwriter("Master.csv",AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean)
-
+AOS_csvwriter("AOS_LOS.csv",AOS_LOS_list)
 # Debugging
 STKout('EphemFileExample.txt',str(Starttime),time,'Inertial',zTest_ECI_R,zTest_ECI_v)
 
