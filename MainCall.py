@@ -881,13 +881,16 @@ def STKsp(PointingAngles,time):
         file_2.close    
         
         # In[]
-def csvwriter(filename,AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean):
-    with open(filename,mode='w+') as csv_file:
+def Master_csvwriter(filename,AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean):
+    with open(filename,mode='w+',newline='') as csv_file:
         
         csv_writer=csv.writer(csv_file,delimiter=',',quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        csv_writer.writerow(["Azimuth","Elevation","Rate of AZ","Rate of EL","Topocentric Range","Topocentric Reletive Velocity","Time","Satellite Name","Avilable for View TRUE=1","Signal Acquired","Signal Lost"])
-        for s in range(0,len(AZ)-1):
-           csv_writer.writerow([AZ[s],EL[s],Rate_of_AZ[s],Rate_of_EL[s],R_ti[s],v_rel_ti[s],time[s],SatList[Satnum[s]].name,Avail_list[s],AOS_List_boolean[s],LOS_List_boolean[s]])
+        csv_writer.writerow(["Perifocal Range","Perifocal Velocity","ECI Position","ECI_Velocity","ECF Position","ECF Velocity" \
+                             ,"Azimuth","Elevation","Rate of AZ","Rate of EL","Topocentric Range",\
+                                 "Topocentric Reletive Velocity","Time","Satellite Name","Avilable for View TRUE=1", \
+                                     "Signal Acquired","Signal Lost"])
+        for s in range(0,len(AZ)):
+           csv_writer.writerow([zTest_R_per[s],zTest_v_per[s],zTest_ECI_R[s],zTest_ECI_v[s],zTest_ECF_R[s],zTest_ECF_vel_rel[s],AZ[s],EL[s],Rate_of_AZ[s],Rate_of_EL[s],R_ti[s],v_rel_ti[s],time[s],SatList[Satnum[s]].name,Avail_list[s],AOS_List_boolean[s],LOS_List_boolean[s]])
        
         csv_file.close
     
@@ -913,7 +916,7 @@ AOS_LOS_list=Visibility(StationInstance,AZ,EL,time,Satnum,Signal_loss)
 
 #writing to a csv file
 
-csvwriter("Name.csv",AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean)
+Master_csvwriter("Master.csv",AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean)
 
 # Debugging
 STKout('EphemFileExample.txt',str(Starttime),time,'Inertial',zTest_ECI_R,zTest_ECI_v)
@@ -923,9 +926,7 @@ STKout('EphemFileExample.txt',str(Starttime),time,'Inertial',zTest_ECI_R,zTest_E
 #Outputs AZ in Rads
 
     # In[]
-signalloss=linkcal(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
 
-#Note: AOS/LOS has not been created yet
 
     # In[]
 #                                           Testing Cell
