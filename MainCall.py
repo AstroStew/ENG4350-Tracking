@@ -193,7 +193,7 @@ def KeplerEqn(Mt_mean_anomaly,eccentricity):
         E_.append(E_[i]+Del_E_[i])
         i=i+1
         
-     
+
    
     
         
@@ -559,7 +559,7 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
         #returns in radians
         mu=398600.4418 #km^3/s^2
         a=(mu/(2*np.pi*float(SatList[p].meanmo)/86400)**2)**(1/3)
-        [pos_ECI,vel_ECI]=sat_ECI(SatList[p].eccn,KeplerEqn(SatList[p].meanan,SatList[p].eccn), \
+        [pos_ECI,vel_ECI]=sat_ECI(SatList[p].eccn,ecc_anomaly, \
         a,SatList[p].raan,SatList[p].argper,SatList[p].incl,Nt_anomaly_motion)
         
         
@@ -898,6 +898,7 @@ def Master_csvwriter(filename,AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Sat
 
 
  # In[]
+# Note there are some issues involving the way AOS_LOS_list is orientated. 
 def AOS_csvwriter(filename,AOS_LOS_List):
     with open(filename,mode='w+',newline='') as csv_file:
         
@@ -929,6 +930,7 @@ AOS_LOS_list=Visibility(StationInstance,AZ,EL,time,Satnum,Signal_loss)
 
 Master_csvwriter("Master.csv",AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean)
 AOS_csvwriter("AOS_LOS.csv",AOS_LOS_list)
+#AZ_EL_csvwriter("AZ_EL.csv",)
 # Debugging
 STKout('EphemFileExample.txt',str(Starttime),time,'Inertial',zTest_ECI_R,zTest_ECI_v)
 
