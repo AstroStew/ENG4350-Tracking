@@ -12,6 +12,7 @@ import datetime as dt
 import numpy as np
 import math
 from scipy.spatial.transform import Rotation as R
+import csv
 
 
 
@@ -44,8 +45,11 @@ def doy(YR,MO,D):
     return DOY
     
     # In[]
-# This creates a list of 
+# This creates a list of datetime objectas in the time_list
 def referenceepoch_propagate(TrackingData):
+    
+    
+    
     starttime=dt.datetime.strptime(TrackingData.starttime,'%Y-%m-%d-%H:%M:%S')
     endtime=dt.datetime.strptime(TrackingData.endtime,'%Y-%m-%d-%H:%M:%S')
     timestep=float(TrackingData.timestep)
@@ -85,11 +89,8 @@ def THETAN(time_array):
     
 
     for i in range(0,len(time_array)):
-        
-        
-        
+
         Midtime=time_array[i].replace(hour=0,minute=0,second=0)
-    
         D_u=(Midtime-J2000).days
         T_u=D_u/36525
         GMST_00=(99.9677947+36000.7700631*T_u+0.00038793*T_u**2-2.6e-8*T_u**3)%360
@@ -640,6 +641,19 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
   Signal_lost_LOS=[]
   Signal_lost_avail=[]
   
+  #this creates a variable that changes when Available, AOS, or LOS
+  #it's the same length as AZ, EL, times to benefit CSV file
+  global Avail_list, AOS_List_boolean, LOS_List_boolean
+  Avail_list=[]
+  AOS_List_boolean=[]
+  LOS_List_boolean=[]
+  for q in range(0,len(AZ_list)):
+      Avail_list.append(0)
+      AOS_List_boolean.append(0)
+      LOS_List_boolean.append(0)
+      
+  #
+  
   
 
   
@@ -679,6 +693,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
                         del SatNum_LOS[k]
                         del AZ_LOS[k]
                         del EL_LOS[k]
+                        LOS_List_boolean[k]=0
                     else: 
                         append=1
                         break
@@ -688,6 +703,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
                     Times_AOS.append(time[j])
                     SatNum_AOS.append(Satnum_list[j])
                     Signal_lost_AOS.append(Signal_lost[j])
+                    AOS_List_boolean[j]=1
                         
                 #Then no AOS, LOS
                 
@@ -706,6 +722,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
         Times_avail.append(time[j])
         Satnum_avail.append(Satnum_list[j])
         Signal_lost_avail.append(Signal_lost[j])
+        Avail_list[j]=1
       else:
           # Satellite Unavailable
           
@@ -719,6 +736,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
               Times_LOS.append(time[j])
               SatNum_LOS.append(Satnum_list[j])
               Signal_lost_LOS.append(Signal_lost[j])
+              LOS_List_boolean[j]=1
               
               
 
@@ -861,6 +879,21 @@ def STKsp(PointingAngles,time):
         #writing closer 
         file_2.write("END Attitude")
         file_2.close    
+        
+        # In[]
+def csvwriter(filename,AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean):
+    with open(filename,mode='w+') as csv_file:
+        
+        csv_writer=csv.writer(csv_file,delimiter=',',quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        csv_writer.writerow(["Azimuth","Elevation","Rate of AZ","Rate of EL","Topocentric Range","Topocentric Reletive Velocity","Time","Satellite Name","Avilable for View TRUE=1","Signal Acquired","Signal Lost"])
+        for s in range(0,len(AZ)-1):
+           csv_writer.writerow([AZ[s],EL[s],Rate_of_AZ[s],Rate_of_EL[s],R_ti[s],v_rel_ti[s],time[s],SatList[Satnum[s]].name,Avail_list[s],AOS_List_boolean[s],LOS_List_boolean[s]])
+       
+        csv_file.close
+    
+    
+        return 
+# This functions converts all the lists into a csv file which can be read into excel and understood easily 
 
  # In[]
 
@@ -877,6 +910,10 @@ Signal_loss=TrackingData(freq,Antennaeff,AntennaDia,R_ti)
 [AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List]=Pointing(StationInstance,AZ,EL,time,Satnum,Signal_loss)
 #Visibility creates a formatted list 
 AOS_LOS_list=Visibility(StationInstance,AZ,EL,time,Satnum,Signal_loss)
+
+#writing to a csv file
+
+csvwriter("Name.csv",AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean)
 
 # Debugging
 STKout('EphemFileExample.txt',str(Starttime),time,'Inertial',zTest_ECI_R,zTest_ECI_v)
