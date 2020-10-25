@@ -237,9 +237,9 @@ def perifocal(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascendi
         
         
     #Calculating R and its components
-    r=a_semi_major_axis*(1-eccentricity**2)/(1+eccentricity*math.cos(true_anom))
-    r_px=r*math.cos(true_anom)
-    r_py=r*math.sin(true_anom)
+    r=a_semi_major_axis*(1-eccentricity**2)/(1+eccentricity*math.cos(v))
+    r_px=-r*math.cos(v)
+    r_py=-r*math.sin(v)
     r_pz=0
     R_per=[r_px,r_py,r_pz]
     #Calculating Velocity Components
