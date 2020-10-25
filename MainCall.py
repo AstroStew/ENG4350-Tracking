@@ -133,23 +133,30 @@ def mean_anomaly_motion(time,ts_sat_epoch,M0_mean_anomaly,n_mean_motion, \
     Mt_mean_anomaly=M0_mean_anomaly+ \
         n_mean_motion*(360*t/86400)+360*(n_dot_mean_motion/2)*((t/86400)**2)+ \
         360*(n_2dots_mean_motion/6)*((t/86400)**3)
+        #outputs in deg
+        
     Nt_mean_anomaly_motion=n_mean_motion* \
-        (360*t/86400) + 2*360*(n_dot_mean_motion/2)*(t/(86400**2))+ \
+        (360/86400) + 2*360*(n_dot_mean_motion/2)*(t/(86400**2))+ \
         3*360*(n_2dots_mean_motion/6)*(t**2/(86400**3))
+        # outputs in degs/sec
+        
+    Nt_mean_anomaly_motion_rev_day=Nt_mean_anomaly_motion*240    
 
     #Removing Mutlples
     Mt_mean_anomaly=Mt_mean_anomaly%360
     
     # Low Level Debug Helper
-    global zTest_Mt_Mean_anomaly
+    global zTest_Mt_Mean_anomaly, zTest_Nt_mean_anomaly_motion
     
     try:
         
         zTest_Mt_Mean_anomaly.append(Mt_mean_anomaly)
+        zTest_Nt_mean_anomaly_motion.append(Nt_mean_anomaly_motion_rev_day)
     except:
         zTest_Mt_Mean_anomaly=[]
         zTest_Mt_Mean_anomaly.append(Mt_mean_anomaly)
-        
+        zTest_Nt_mean_anomaly_motion=[]
+        zTest_Nt_mean_anomaly_motion.append(Nt_mean_anomaly_motion_rev_day)
         
     
     
@@ -210,18 +217,23 @@ def perifocal(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascendi
     #Ensuring Orbital ELements are in right format
     eccentricity=float(eccentricity) 
     ecc_anomaly=float(ecc_anomaly)
-    omega_longitude_ascending_node=float(omega_longitude_ascending_node)
-    omega_argument_periapsis=float(omega_argument_periapsis)
-    inclination=float(inclination)
-    nt_mean_motion=float(nt_mean_motion)
+    omega_longitude_ascending_node=float(omega_longitude_ascending_node)# deg
+    omega_argument_periapsis=float(omega_argument_periapsis) #deg
+    inclination=float(inclination) #deg
+    nt_mean_motion=float(nt_mean_motion) #deg/sec
     
     ecc_anomaly=np.deg2rad(ecc_anomaly)
     
     
     #Calculating True Anomaly
     true_anom=2*(math.atan(math.sqrt((1+eccentricity)/ \
-                                     (1-eccentricity))*math.tan(ecc_anomaly)))
+                                     (1-eccentricity)))*math.tan(ecc_anomaly/2))
+    
         #radians
+    # different approach
+    v=math.acos((math.cos(ecc_anomaly)-eccentricity)/(1-eccentricity*math.cos(ecc_anomaly)))
+        
+        
         
         
     #Calculating R and its components
@@ -242,15 +254,19 @@ def perifocal(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascendi
     #km/s
     
     # Low Level Debug Helper
-    global zTest_R_per, zTest_v_per
+    global zTest_true_anom,zTest_R_per, zTest_v_per
     try:
         zTest_R_per.append(R_per)
         zTest_v_per.append(v_per)
+        zTest_true_anom.append(np.degrees(true_anom))
     except:
         zTest_R_per=[]
         zTest_v_per=[]
+        zTest_true_anom=[]
         zTest_R_per.append(R_per)
         zTest_v_per.append(v_per) 
+        zTest_true_anom.append(np.degrees(true_anom))
+        
     
     return R_per,v_per
     # In[]
@@ -570,7 +586,7 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
         
         
         mu=398600.4418 #km^3/s^2
-        a=(mu/(2*np.pi*float(SatList[p].meanmo)/86400)**2)**(1/3)
+        a=(mu/(2*np.pi*float((Nt_anomaly_motion*240))/86400)**2)**(1/3) #Covnerts Nt to rev/day then calculates a
         [pos_ECI,vel_ECI]=sat_ECI(SatList[p].eccn,ecc_anomaly, \
         a,SatList[p].raan,SatList[p].argper,SatList[p].incl,Nt_anomaly_motion)
         
