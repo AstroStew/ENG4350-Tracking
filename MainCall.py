@@ -371,9 +371,9 @@ def range_ECF2topo(station_body_position, \
                    sat_ecf_position,sat_ecf_velocity,station_longitude, \
                    station_latitude):
     
-    station_longitude=np.degrees(float(station_longitude))
-    station_latitude=np.degrees(float(station_latitude))
-    #input as Rads only
+    station_longitude=np.deg2rad(float(station_longitude))
+    station_latitude=np.deg2rad(float(station_latitude))
+    
     
     
     
@@ -713,14 +713,24 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
     ThisStationLimit=StnInstance.az_el_lim[i].split(",")
     
     # Covnerts Limits from Degrees to Rads
-    AZ_muth_limit=float(ThisStationLimit[0])*math.pi/180
-    EL_lim_max=float(ThisStationLimit[2])*math.pi/180
-    EL_lim_min=float(ThisStationLimit[1])*math.pi/180
+    AZ_muth_max=np.deg2rad(float(ThisStationLimit[0]))
+    if i>0:
+        PreviousStationLimit=StnInstance.az_el_lim[i-1].split(",")
+        AZ_muth_min=np.deg2rad(float(PreviousStationLimit[0]))
+        #min Value for this Azimuth Step
+    else:
+        AZ_muth_min=0
+        if(int(StnInstance.az_el_nlim)==1):
+            AZ_muth_max=math.pi*2
+        
+    
+    EL_lim_max=np.deg2rad(float(ThisStationLimit[2]))
+    EL_lim_min=np.deg2rad(float(ThisStationLimit[1]))
     
     
     for j in range(0,len(AZ_list)):
       
-      if AZ_list[j] > (AZ_muth_limit) and (EL_lim_max) > EL_list[j] and EL_list[j] > (EL_lim_min):
+      if AZ_list[j] > (AZ_muth_min) and AZ_muth_max > AZ_list[j] and (EL_lim_max) > EL_list[j] and EL_list[j] > (EL_lim_min):
         #compares Azimuth and Elevations to Limits
           
           #Satellite Available
@@ -728,17 +738,20 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
         
           #Compares to Previous Value
           # If previous value is not in limits but is now either AOS or from another limit iteration** 
-        if j >= (Satnum_iteration) and  Satnum_list[j] == Satnum_list[j-Satnum_iteration] and AZ_list[j-Satnum_iteration] < float(AZ_muth_limit) or float(EL_lim_max) < EL_list[j-Satnum_iteration] or EL_list[j-Satnum_iteration] < float(EL_lim_min):
+        if j >= (Satnum_iteration) and  Satnum_list[j] == Satnum_list[j-Satnum_iteration] and (AZ_list[j-Satnum_iteration] < float(AZ_muth_min) or AZ_list[j-Satnum_iteration] > float(AZ_muth_max) or float(EL_lim_max) < EL_list[j-Satnum_iteration] or EL_list[j-Satnum_iteration] < float(EL_lim_min)):
             # A Signal has been acquired
             
             #** Here we test to see if the AOS was caused by limit bound issues or from actual AOS
             
             if i > 0:
                 
+                append=0  
                 for k in range(0,len(Times_LOS)):
+                  
                     
                     if time[j] == Times_LOS[k] and Satnum[j]== SatNum_LOS[k]:
                         append=0
+                        #False Signal Acquire- Delete previous LOS
                         del Times_LOS[k]
                         del SatNum_LOS[k]
                         del AZ_LOS[k]
@@ -746,6 +759,8 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
                         LOS_List_boolean[k]=0
                     else: 
                         append=1
+                        #True Signal Acquired
+                        
                         break
                 if append==1:
                     AZ_AOS.append(AZ_list[j])
@@ -754,16 +769,24 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
                     SatNum_AOS.append(Satnum_list[j])
                     Signal_lost_AOS.append(Signal_lost[j])
                     AOS_List_boolean[j]=1
-                        
-                #Then no AOS, LOS
                 
-            # This is actual AOS    
             else:
+                # Acquisition of    
                 AZ_AOS.append(AZ_list[j])
                 EL_AOS.append(EL_list[j])
                 Times_AOS.append(time[j])
                 SatNum_AOS.append(Satnum_list[j])
                 Signal_lost_AOS.append(Signal_lost[j])
+                print("First Signals Acquired")
+                
+                
+                 
+                        
+                        
+                
+                
+             
+                
                 
                 
                 
@@ -777,7 +800,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
           # Satellite Unavailable
           
           #Compares previous iteration of Satellite to current Satellite Available
-          if j >= (Satnum_iteration)  and Satnum_list[j]==Satnum_list[j-(Satnum_iteration)] and AZ_list[j-(Satnum_iteration)] > float(AZ_muth_limit) and float(EL_lim_max) > EL_list[j-(Satnum_iteration)] and EL_list[j-(Satnum_iteration)] > float(EL_lim_min):
+          if j >= (Satnum_iteration)  and Satnum_list[j]==Satnum_list[j-(Satnum_iteration)] and AZ_list[j-(Satnum_iteration)] > (AZ_muth_min) and AZ_muth_max > AZ_list[j-(Satnum_iteration)]  and float(EL_lim_max) > EL_list[j-(Satnum_iteration)] and EL_list[j-(Satnum_iteration)] > float(EL_lim_min):
               #If Satellite was available but is no longer then it is either LOS or out of our Limit Range
               #
               
