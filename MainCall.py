@@ -292,10 +292,11 @@ def sat_ECI(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascending
     #Creates transformation
     Per_to_ECI=R.from_euler('ZXZ',[float(omega_longitude_ascending_node),float(inclination),float(omega_argument_periapsis)],degrees=True).as_matrix()
     #Note: RAAN,omega,inc in degrees
-    pos_ECI = np.matmul(Per_to_ECI,r_per)
+    pos_ECI = (np.matmul(Per_to_ECI,r_per)).tolist()
     
     #pos_ECI=(Per_to_ECI.apply(r_per)).tolist()
-    vel_ECI=np.matmul(Per_to_ECI,v_per)
+    vel_ECI=(np.matmul(Per_to_ECI,v_per)).tolist()
+    #List variables are easier for me to deal with 
     
     
     
@@ -307,19 +308,23 @@ def sat_ECF(theta_t,eci_position,eci_velocity):
     
     
     #Creates rotational transformation
-    ECI_to_ECF=R.from_euler('Z',[float(theta_t)], degrees=True)
+    ECI_to_ECF=R.from_euler('Z',[-float(theta_t)], degrees=True).as_matrix()
     
     #Applies Rotational Transformation
-    pos_ECF=ECI_to_ECF.apply(eci_position).tolist()[0] # had to perform weird 
-    #weird conversion to get back to list
+    #pos_ECF=ECI_to_ECF.apply(eci_position).tolist()[0] # had to perform weird
     
-    vel_ECF=ECI_to_ECF.apply(eci_velocity).tolist()[0]
+    pos_ECF=(np.matmul(ECI_to_ECF,eci_position)).tolist()[0]
+    #weird conversion to get back to list
+    #vel_ECF=ECI_to_ECF.apply(eci_velocity).tolist()[0]
+    vel_ECF=(np.matmul(ECI_to_ECF,eci_velocity)).tolist()[0]
     #km/s
     
     
     #Relative Velocity
     Siderial_rotation=[1,1,360/86164.091] #Degrees/s
-    vel_rel=ECI_to_ECF.apply(eci_velocity-np.matmul(Siderial_rotation,eci_position))
+    
+    #vel_rel=ECI_to_ECF.apply(eci_velocity-np.matmul(Siderial_rotation,eci_position))
+    vel_rel=np.matmul(ECI_to_ECF,eci_velocity-np.matmul(Siderial_rotation,eci_position)).tolist()
     #km/s
     
     
@@ -417,7 +422,7 @@ def range_topo2look_angle(range_topo_position,range_topo_velocity):
     R_xy=[R[0],R[1]]
     #In Software Specification Rxy is [tx ty]{Rtx;Rty} which would give a result of a singular value
     #Here we assume the Professor meant R_xy= the x and y components of R
-    
+    print(v_rel)
     v_xy=[v_rel[0],v_rel[1]]
     
     #Calculates rates of AZ and EL
