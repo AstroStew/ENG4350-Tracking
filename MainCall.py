@@ -371,8 +371,8 @@ def range_ECF2topo(station_body_position, \
                    sat_ecf_position,sat_ecf_velocity,station_longitude, \
                    station_latitude):
     
-    station_longitude=float(station_longitude)*math.pi/180
-    station_latitude=float(station_latitude)*math.pi/180
+    station_longitude=np.degrees(float(station_longitude))
+    station_latitude=np.degrees(float(station_latitude))
     #input as Rads only
     
     
@@ -409,12 +409,12 @@ def range_ECF2topo(station_body_position, \
     # In[]
 def range_topo2look_angle(range_topo_position,range_topo_velocity):
     R=range_topo_position
-    
+    #Assuming range_topo_velocity is relative
     v_rel=range_topo_velocity
     
     #Calculates the AZ and EL
-    AZ=math.atan(R[0]/R[1])
-    EL=math.atan(R[2]/(math.sqrt(R[0]**2+R[1]**2)))
+    AZ=(np.arctan2(R[0],R[1])+2*math.pi)%(2*math.pi)
+    EL=math.atan(R[2]/(math.sqrt(R[0]**2+R[1]**2))) #Range is 0->90
     
     
     r=np.linalg.norm(R) #scalar of R
@@ -425,7 +425,7 @@ def range_topo2look_angle(range_topo_position,range_topo_velocity):
     v_xy=[v_rel[0],v_rel[1]]
     
     #Calculates rates of AZ and EL
-    rate_of_AZ=np.cross(v_xy,R_xy)
+    rate_of_AZ=np.cross(v_xy,R_xy)/((np.linalg.norm(R_xy))**2)
     rate_of_EL=(r*v_rel[2]-R[2]*np.dot(R_xy,v_xy)/r)/(r**2)
     
     return AZ,EL,rate_of_AZ,rate_of_EL
@@ -433,7 +433,7 @@ def range_topo2look_angle(range_topo_position,range_topo_velocity):
     # In[]
 
 
- ##                         Initialization Code
+ ##                         Initialization Codes
      # In[] 
 
 class Station():
