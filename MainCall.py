@@ -321,7 +321,7 @@ def sat_ECF(theta_t,eci_position,eci_velocity):
     
     
     #Relative Velocity
-    Siderial_rotation=[1,1,360/86164.091] #Degrees/s
+    Siderial_rotation=np.array([[0,0,0],[0,0,0],[0,0,360/86164.091]]) #Degrees/s
     
     #vel_rel=ECI_to_ECF.apply(eci_velocity-np.matmul(Siderial_rotation,eci_position))
     vel_rel=np.matmul(ECI_to_ECF,eci_velocity-np.matmul(Siderial_rotation,eci_position)).tolist()
@@ -422,7 +422,6 @@ def range_topo2look_angle(range_topo_position,range_topo_velocity):
     R_xy=[R[0],R[1]]
     #In Software Specification Rxy is [tx ty]{Rtx;Rty} which would give a result of a singular value
     #Here we assume the Professor meant R_xy= the x and y components of R
-    print(v_rel)
     v_xy=[v_rel[0],v_rel[1]]
     
     #Calculates rates of AZ and EL
