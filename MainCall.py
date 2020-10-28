@@ -24,10 +24,20 @@ import csv
 
 #Converts time in TLE format to Datetime Format
 def refepoch_to_dt(refepoch):
+    global dfrac
+    
     Epochyrday = dt.datetime.strptime((refepoch[0:5]),'%y%j')
     dfrac = np.modf(np.float(refepoch))[0]
+    
     dfracdt = dt.timedelta(microseconds=np.int(dfrac*24*3600*10**6))
     Epochdt = Epochyrday + dfracdt
+    
+    #Epochdt=Epochdt.replace(microsecond=int(str(Epochdt.microsecond)[0:3]+"0000"))
+    #Coverts to STK accuracy
+    #This doesn't make a different in Mean ANomaly Calcualtions
+    
+    
+    
     return Epochdt
 
     # In[]
@@ -124,20 +134,20 @@ def mean_anomaly_motion(time,ts_sat_epoch,M0_mean_anomaly,n_mean_motion, \
     Epochdt_list.append(Epochdt)
     #assume Time is datetime object
     
-    t=((time-Epochdt).total_seconds())
+    t=(time-Epochdt).total_seconds()
     t_list.append(t)
     
     
     
     
     Mt_mean_anomaly=M0_mean_anomaly+ \
-        n_mean_motion*(360*t/86400)+360*(n_dot_mean_motion/2)*((t/86400)**2)+ \
+        n_mean_motion*360*(t/86400)+360*(n_dot_mean_motion/2)*((t/86400)**2)+ \
         360*(n_2dots_mean_motion/6)*((t/86400)**3)
         #outputs in deg
         
     Nt_mean_anomaly_motion=n_mean_motion* \
-        (360/86400) + 2*360*(n_dot_mean_motion/2)*(t/(86400**2))+ \
-        3*360*(n_2dots_mean_motion/6)*(t**2/(86400**3))
+        (360/86400) + 2*360*(n_dot_mean_motion)*(t/(86400**2))+ \
+        3*360*(n_2dots_mean_motion)*(t**2/(86400**3))
         # outputs in degs/sec
         
     Nt_mean_anomaly_motion_rev_day=Nt_mean_anomaly_motion*240    
@@ -160,13 +170,13 @@ def mean_anomaly_motion(time,ts_sat_epoch,M0_mean_anomaly,n_mean_motion, \
         
     
     
-    return Mt_mean_anomaly,Nt_mean_anomaly_motion
+    return Mt_mean_anomaly,Nt_mean_anomaly_motion_rev_day
 
     # In[]
 def KeplerEqn(Mt_mean_anomaly,eccentricity):
     
     #Examples Permitted Error
-    permitted_error=0.32
+    permitted_error=0.05
     #Example Permitted Error
     
     
@@ -226,20 +236,21 @@ def perifocal(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascendi
     
     
     #Calculating True Anomaly
-    true_anom=2*(math.atan(math.sqrt((1+eccentricity)/ \
-                                     (1-eccentricity)))*math.tan(ecc_anomaly/2))
+    true_anom=2*(np.arctan(math.sqrt((1+eccentricity)/ \
+                                     (1-eccentricity)))*np.tan(ecc_anomaly/2))
+    true_anom=((np.arctan2(math.sin(true_anom),math.cos(true_anom)))+2*math.pi)%(2*math.pi)
     
         #radians
     # different approach
     v=math.acos((math.cos(ecc_anomaly)-eccentricity)/(1-eccentricity*math.cos(ecc_anomaly)))
         
-        
+      
         
         
     #Calculating R and its components
-    r=a_semi_major_axis*(1-eccentricity**2)/(1+eccentricity*math.cos(v))
-    r_px=-r*math.cos(v)
-    r_py=-r*math.sin(v)
+    r=a_semi_major_axis*(1-eccentricity**2)/(1+eccentricity*math.cos(true_anom))
+    r_px=r*math.cos(true_anom)
+    r_py=r*math.sin(true_anom)
     r_pz=0
     R_per=[r_px,r_py,r_pz]
     #Calculating Velocity Components
@@ -279,10 +290,12 @@ def sat_ECI(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascending
     
     
     #Creates transformation
-    Per_to_ECI=R.from_euler('ZXZ',[-float(omega_longitude_ascending_node),-float(inclination),-float(omega_argument_periapsis)],degrees=True)
+    Per_to_ECI=R.from_euler('ZXZ',[float(omega_longitude_ascending_node),float(inclination),float(omega_argument_periapsis)],degrees=True).as_matrix()
     #Note: RAAN,omega,inc in degrees
-    pos_ECI=(Per_to_ECI.apply(r_per)).tolist()
-    vel_ECI=(Per_to_ECI.apply(v_per)).tolist()
+    pos_ECI = np.matmul(Per_to_ECI,r_per)
+    
+    #pos_ECI=(Per_to_ECI.apply(r_per)).tolist()
+    vel_ECI=np.matmul(Per_to_ECI,v_per)
     
     
     
@@ -563,6 +576,8 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
     Epochdt_list=[]
     global t_list
     t_list=[]
+    global a_list
+    a_list=[]
     
     #Propagtes data for THETAN
     Refepoch=referenceepoch_propagate(Tracking)
@@ -585,8 +600,11 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
         
         
         
-        mu=398600.4418 #km^3/s^2
-        a=(mu/(2*np.pi*float((Nt_anomaly_motion*240))/86400)**2)**(1/3) #Covnerts Nt to rev/day then calculates a
+        mu=398600.4418 #km^3/s
+        
+        a=(mu/(2*np.pi*float(Nt_anomaly_motion)/86400)**2)**(1/3)
+        a_list.append(a)
+        
         [pos_ECI,vel_ECI]=sat_ECI(SatList[p].eccn,ecc_anomaly, \
         a,SatList[p].raan,SatList[p].argper,SatList[p].incl,Nt_anomaly_motion)
         
@@ -958,10 +976,10 @@ def AZ_EL_csvwriter(filename,Satnum_avail,AZ_avail,EL_avail,Time_Avail):
 
 #Assuming That The Use has alreadu initialized all necessary functions and classes
 # The Main Program can be deduced to this
-[StationInstance,SatList,Tracking,LinkData]=User_Input_parser_Call(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\Station.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\gps-ops.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\TrackingData.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
+[StationInstance,SatList,Tracking,LinkData]=User_Input_parser_Call(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 04\Submission\Station.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 05\gps-ops.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 04\Submission\TrackingData.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 04\Submission\LinkInputs.txt')
 [AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum]=Sat_pos_velCall(StationInstance,SatList,Tracking)
 
-[freq,Antennaeff,AntennaDia]=linkcal(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 03\ReferenceFiles\LinkInputs.txt')
+[freq,Antennaeff,AntennaDia]=linkcal(r'D:\School\5th Year Fall Semester\ESSE 4350\Lab 04\Submission\LinkInputs.txt')
 Signal_loss=TrackingData(freq,Antennaeff,AntennaDia,R_ti)
 [AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List]=Pointing(StationInstance,AZ,EL,time,Satnum,Signal_loss)
 #Visibility creates a formatted list 
