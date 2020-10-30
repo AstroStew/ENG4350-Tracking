@@ -771,7 +771,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
                     AOS_List_boolean[j]=1
                 
             else:
-                # Acquisition of    
+                # Acquisition of Signal    
                 AZ_AOS.append(AZ_list[j])
                 EL_AOS.append(EL_list[j])
                 Times_AOS.append(time[j])
@@ -800,7 +800,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
           # Satellite Unavailable
           
           #Compares previous iteration of Satellite to current Satellite Available
-          if j >= (Satnum_iteration)  and Satnum_list[j]==Satnum_list[j-(Satnum_iteration)] and AZ_list[j-(Satnum_iteration)] > (AZ_muth_min) and AZ_muth_max > AZ_list[j-(Satnum_iteration)]  and float(EL_lim_max) > EL_list[j-(Satnum_iteration)] and EL_list[j-(Satnum_iteration)] > float(EL_lim_min):
+          if j >= (Satnum_iteration)  and Satnum_list[j]==Satnum_list[j-(Satnum_iteration)]  and AZ_list[j-(Satnum_iteration)] > (AZ_muth_min) and AZ_muth_max > AZ_list[j-(Satnum_iteration)]  and float(EL_lim_max) > EL_list[j-(Satnum_iteration)] and EL_list[j-(Satnum_iteration)] > float(EL_lim_min):
               #If Satellite was available but is no longer then it is either LOS or out of our Limit Range
               #
               
@@ -810,6 +810,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
               SatNum_LOS.append(Satnum_list[j])
               Signal_lost_LOS.append(Signal_lost[j])
               LOS_List_boolean[j]=1
+              
               
               
 
@@ -848,19 +849,46 @@ def Visibility(StationInstance,AZ,EL,times,Satnum,Signal_lost):
     Sat_LOS_Time=LOS[2]
     
     AOS_LOS_list=[]
+    
+    
+            
+    
+    
+    
     for i in range(0,len(Satnum_AOS)):
         for j in range(0,len(Satnum_LOS)):
-            if Satnum_AOS[i] == Satnum_LOS[j]:
+            
+            if Satnum_AOS[i] == Satnum_LOS[j] and Sat_LOS_Time[j] >= Sat_AOS_Time[i] :
+                
                 Templist=[Satnum_AOS[i],SatList[Satnum_AOS[i]].name,Sat_AOS_Time[i],Sat_LOS_Time[j],Sat_Signal_Lost[i]]
                 #creates a temporary list to store Sat number,Sat list name ,AOS time,LOS time and 
                 AOS_LOS_list.append(Templist)
-                
+    
+
         
+    global Unique_AOS_LOS
+    Unique_AOS_LOS=[[],[],[],[],[]]
+    
+   
+    for i in range(0,len(AOS_LOS_list)):
+        AOS_time=AOS_LOS_list[i][2]
+        Satname=AOS_LOS_list[i][1]
+        Satnum=AOS_LOS_list[i][0]
+        LOS_time=AOS_LOS_list[i][3]
+        Sat_Signal_Lost=AOS_LOS_list[i][4]
+        if AOS_time not in Unique_AOS_LOS[2]:
+            
+            #creates a Unique List of AOS
+            Unique_AOS_LOS[0].append(Satnum)
+            Unique_AOS_LOS[1].append(Satname)
+            Unique_AOS_LOS[2].append(AOS_time)
+            Unique_AOS_LOS[3].append(LOS_time)
+            Unique_AOS_LOS[4].append(Sat_Signal_Lost)
+            
+            
     
     
-    
-    
-    return AOS_LOS_list
+    return Unique_AOS_LOS
     # In[]
 def TrackingData(freq,Antennaeff,AntennaDia,R_ti):
     Signal_loss=[]
@@ -977,9 +1005,9 @@ def AOS_csvwriter(filename,AOS_LOS_List):
         
         csv_writer=csv.writer(csv_file,delimiter=',',quotechar='"', quoting=csv.QUOTE_MINIMAL)
         csv_writer.writerow(["Sat No.","Sat Name","AOS Time","LOS Time","Min Expected Level",])
-        for s in range(0,len(AOS_LOS_List)):
-            AOS_instance=AOS_LOS_List[s]
-            csv_writer.writerow([AOS_instance[0],AOS_instance[1],AOS_instance[2],AOS_instance[3],AOS_instance[4]])
+        for s in range(0,len(AOS_LOS_List[0])):
+            #AOS_instance=AOS_LOS_List[s]
+            csv_writer.writerow([AOS_LOS_List[0][s],AOS_LOS_List[1][s],AOS_LOS_List[2][s],AOS_LOS_List[3][s],AOS_LOS_List[4][s]])
        
         csv_file.close    
         return 
