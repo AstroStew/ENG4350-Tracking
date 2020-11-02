@@ -745,6 +745,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
             
             if i > 0:
                 
+                
                 append=0  
                 for k in range(0,len(Times_LOS)):
                   
@@ -1031,8 +1032,8 @@ def AZ_EL_csvwriter(filename,Satnum_avail,AZ_avail,EL_avail,Time_Avail):
 def Output_function(Coord,position,velocity,time,t_list,Epochdt_list):
     
 
-    val=input("Enter the Satellite Index:")
-    print(SatList[int(val)])
+    val=input("Enter the Satellite Index to Output in .sp and .e file:")
+    print(SatList[int(val)].name, "Has been chosen")
     Satnum_iteration=len(SatList)
     
     sat_time=[]
@@ -1055,7 +1056,7 @@ def Output_function(Coord,position,velocity,time,t_list,Epochdt_list):
         
     #Change to right format    
     EpochTimeString=dt.datetime.strftime(Epochdt_list[int(val)],"%d-%b-%Y %H:%M:%S")  
-    STKout('EphemFileExample.txt',EpochTimeString,sat_time,Coord,sat_position,sat_velocity)
+    STKout('EphemFileExample.txt',EpochTimeString,time_since_epoch_sec,Coord,sat_position,sat_velocity)
 
 
     STKsp(AZ,EL,time_since_epoch_sec)
