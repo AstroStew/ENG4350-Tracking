@@ -959,6 +959,8 @@ def STKout(EphemFile,Epochtime,time,Coord,position,velocity):
 # In[]
 def STKsp(AZ,EL,time):
         
+    
+    #Takes in Aximuth and Elevatyion in Radians
         #We should have an input file name. I've provided one here to help
         spFile="STKsp.txt"
         
@@ -975,7 +977,7 @@ def STKsp(AZ,EL,time):
         
     
         for i in range(0,len(time)):
-            file_2.write('{0:7.2f} {1:7.2f} {2:7.2f}\n'.format(float(time[i]),float(AZ[i]),float(EL[i])))
+            file_2.write('{0:7.2f} {1:7.2f} {2:7.2f}\n'.format(float(time[i]),float(np.rad2deg(AZ[i])),float(np.rad2deg(EL[i]))))
         # for i is in time, we iterate through the list to write in the values to the value
             
             
