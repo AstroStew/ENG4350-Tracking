@@ -135,7 +135,7 @@ def mean_anomaly_motion(time,ts_sat_epoch,M0_mean_anomaly,n_mean_motion, \
     #assume Time is datetime object
     
     t=(time-Epochdt).total_seconds()
-    t_list.append(t)
+    time_since_epoch_sec.append(t)
     
     
     
@@ -487,11 +487,11 @@ def SatListPropagate(SatFIL):
         line2=Satfile.readline()
         try:
             SatList.append(Satellite(line0,line1,line2))
-            print('Satellite has been registered as Satellite:',len(SatList),"Array index: [",len(SatList)-1,"]")
+            print(SatList[i].name,'Satellite has been registered as Satellite:',len(SatList),"Array index: [",len(SatList)-1,"]")
         except:
             SatList=[]
             SatList.append(Satellite(line0,line1,line2))
-            print('SatList has been created')
+            print('SatList has been created with',SatList[i].name,"Being the First Satellite")
         i=i+1
     return SatList
     # In[]
@@ -578,8 +578,8 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
     
     global Epochdt_list
     Epochdt_list=[]
-    global t_list
-    t_list=[]
+    global time_since_epoch_sec
+    time_since_epoch_sec=[]
     global a_list
     a_list=[]
     
@@ -905,7 +905,7 @@ def TrackingData(freq,Antennaeff,AntennaDia,R_ti):
     
     
     # In[]
-def STKout(EphemFile,StartString,time,Coord,position,velocity):
+def STKout(EphemFile,Epochtime,time,Coord,position,velocity):
     
     #Asssuming StartString is the Start Time String
     
@@ -918,7 +918,8 @@ def STKout(EphemFile,StartString,time,Coord,position,velocity):
     
     #Creates a set of Strings that can be easily changed. 
     
-    ScenarioEpochString="ScenarioEpoch \t"+StartString
+    #ScenarioEpochString="ScenarioEpoch \t"+StartString
+    #Scenario Epch is not requried 
     CentralBody="Earth"
     CentralBodyString="Central Body "+ CentralBody
     CoordinateSystemString="CoordinateSystem "+Coord
@@ -927,7 +928,7 @@ def STKout(EphemFile,StartString,time,Coord,position,velocity):
     #Writing Header
     file_1.write("stk.v.4.3 \n\nBEGIN Ephemeris \n\n")
     file_1.write("NumberOfEpemerisPoints "+str(NumofEphermis)+"\n")
-    file_1.write(ScenarioEpochString+"\n")
+    #file_1.write(ScenarioEpochString+"\n")
     file_1.write(CentralBodyString+"\n")
     file_1.write(CoordinateSystemString+"\n")
     file_1.write("EphemerisTimePosVel\n")
@@ -955,10 +956,10 @@ def STKout(EphemFile,StartString,time,Coord,position,velocity):
     file_1.close()
 
 # In[]
-def STKsp(PointingAngles,time):
+def STKsp(AZ,EL,time):
         
         #We should have an input file name. I've provided one here to help
-        spFile="STKsp.sp"
+        spFile="STKsp.txt"
         
         #opens file
         file_2=open(spFile,"w+")
@@ -969,13 +970,13 @@ def STKsp(PointingAngles,time):
         file_2.write("stk.v.4.3 \nBEGIN\tAttitude\n")
         file_2.write("NumberOfAttitudePoints "+str(NumofAttitudes)+"\n")
         file_2.write("AttitudeTimeAzElAngles\n")
-        AL=[row[0] for row in PointingAngles]
-        EL=[row[1] for row in PointingAngles]
-        i=0
-        while i<len(time):
-            file_2.write('{0:7.2f} {1:7.2f} {2:7.2f}\n'.format(float(time[i]),float(AL[i]),float(EL[i])))
+        
+        
+    
+        for i in range(0,len(time)):
+            file_2.write('{0:7.2f} {1:7.2f} {2:7.2f}\n'.format(float(time[i]),float(AZ[i]),float(EL[i])))
         # for i is in time, we iterate through the list to write in the values to the value
-            i=i+1
+            
             
         #writing closer 
         file_2.write("END Attitude")
@@ -1024,6 +1025,42 @@ def AZ_EL_csvwriter(filename,Satnum_avail,AZ_avail,EL_avail,Time_Avail):
        
         csv_file.close    
         return
+    
+    # In[]
+
+def Output_function(Coord,position,velocity,time,t_list,Epochdt_list):
+    
+
+    val=input("Enter the Satellite Index:")
+    print(SatList[int(val)])
+    Satnum_iteration=len(SatList)
+    
+    sat_time=[]
+    time_since_epoch_sec=[]
+    sat_position=[]
+    sat_velocity=[]
+    Num_of_iterations=len(time)/Satnum_iteration
+    for i in range(0,int(Num_of_iterations)):
+        #Iterates through time and timesince epoch for a specific Satellite
+        
+        #This is done because the time and T_list for a specific sat is seperated by the lenght of a Satlist
+        sat_time.append(time[int(val)+i*Satnum_iteration])
+        time_since_epoch_sec.append(t_list[int(val)+i*Satnum_iteration])
+        sat_position.append(position[int(val)+i*Satnum_iteration])
+        sat_velocity.append(velocity[int(val)+i*Satnum_iteration])
+
+
+
+# Accessing other Functions
+        
+    #Change to right format    
+    EpochTimeString=dt.datetime.strftime(Epochdt_list[int(val)],"%d-%b-%Y %H:%M:%S")  
+    STKout('EphemFileExample.txt',EpochTimeString,sat_time,Coord,sat_position,sat_velocity)
+
+
+    STKsp(AZ,EL,time_since_epoch_sec)
+    return 
+
  # In[]
 
 ##                  Main Function
@@ -1047,10 +1084,12 @@ AOS_csvwriter("AOS_LOS.csv",AOS_LOS_list)
 AZ_EL_csvwriter("AZ_EL.csv",Satnum_avail,AZ_avail,EL_avail,Times_avail)
 #Outputs AZ in Rads
 
+# Output
+ 
+Output_function('Inertial',zTest_ECI_R,zTest_ECI_v,time,time_since_epoch_sec,Epochdt_list)
 
-# Debugging
-STKout('EphemFileExample.txt',str(Starttime),time,'Inertial',zTest_ECI_R,zTest_ECI_v)
 
+    
 
 
 
