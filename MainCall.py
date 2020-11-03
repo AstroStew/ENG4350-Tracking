@@ -745,6 +745,9 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
             
             if i > 0:
                 
+                    
+                
+                
                 
                 append=0  
                 for k in range(0,len(Times_LOS)):
@@ -772,13 +775,13 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
                     AOS_List_boolean[j]=1
                 
             else:
-                # Acquisition of Signal    
+                # First Signal Acquisition of Signal    
                 AZ_AOS.append(AZ_list[j])
                 EL_AOS.append(EL_list[j])
                 Times_AOS.append(time[j])
                 SatNum_AOS.append(Satnum_list[j])
                 Signal_lost_AOS.append(Signal_lost[j])
-                print("First Signals Acquired")
+                
                 
                 
                  
@@ -919,17 +922,19 @@ def STKout(EphemFile,Epochtime,time,Coord,position,velocity):
     
     #Creates a set of Strings that can be easily changed. 
     
-    #ScenarioEpochString="ScenarioEpoch \t"+StartString
+    ScenarioEpochString="ScenarioEpoch \t"+Epochtime
     #Scenario Epch is not requried 
     CentralBody="Earth"
-    CentralBodyString="Central Body "+ CentralBody
+    CentralBodyString="CentralBody "+ CentralBody
     CoordinateSystemString="CoordinateSystem "+Coord
     NumofEphermis=len(time) #I don't know how to attain this number
     
     #Writing Header
-    file_1.write("stk.v.4.3 \n\nBEGIN Ephemeris \n\n")
-    file_1.write("NumberOfEpemerisPoints "+str(NumofEphermis)+"\n")
-    #file_1.write(ScenarioEpochString+"\n")
+    file_1.write("stk.v.5.0 \nBEGIN Ephemeris \n")
+    
+    file_1.write("NumberOfEphemerisPoints "+str(NumofEphermis)+"\n")
+    file_1.write(ScenarioEpochString+"\n")
+    file_1.write("DistanceUnit \t Kilometers \n")
     file_1.write(CentralBodyString+"\n")
     file_1.write(CoordinateSystemString+"\n")
     file_1.write("EphemerisTimePosVel\n")
@@ -945,7 +950,7 @@ def STKout(EphemFile,Epochtime,time,Coord,position,velocity):
     i=0
     for i in range(0,len(time)):
         
-        file_1.write('{0:15} {1:15.14e} {2:15.14e} {3:15.14e} {4:15.14e} {6:15.14e} \n'.format((time[i]),float(X[i]),float(Y[i]),float(Z[i]),float(X_dot[i]),float(Y_dot[i]),float(Z_dot[i])))
+        file_1.write('{0:15.14e} {1:15.14e} {2:15.14e} {3:15.14e} {4:15.14e} {5:15.14e} {6:15.14e} \n'.format(float(time[i]),float(X[i]),float(Y[i]),float(Z[i]),float(X_dot[i]),float(Y_dot[i]),float(Z_dot[i])))
         #writing to file in formatted way
         
         
@@ -962,7 +967,7 @@ def STKsp(AZ,EL,time):
     
     #Takes in Aximuth and Elevatyion in Radians
         #We should have an input file name. I've provided one here to help
-        spFile="STKsp.txt"
+        spFile="STKsp.sp"
         
         #opens file
         file_2=open(spFile,"w+")
@@ -1031,7 +1036,7 @@ def AZ_EL_csvwriter(filename,Satnum_avail,AZ_avail,EL_avail,Time_Avail):
     
     # In[]
 
-def Output_function(Coord,position,velocity,time,t_list,Epochdt_list):
+def Output_function(Coord,position,velocity,time,t_list,Epochdt_list,AZ,EL):
     
 
     val=input("Enter the Satellite Index to Output in .sp and .e file:")
@@ -1039,29 +1044,43 @@ def Output_function(Coord,position,velocity,time,t_list,Epochdt_list):
     Satnum_iteration=len(SatList)
     
     sat_time=[]
-    time_since_epoch_sec=[]
+    time_since_epoch_sec_sat=[]
     sat_position=[]
     sat_velocity=[]
+    sat_position_ECF=[]
+    sat_velocity_ECF=[]
+    sat_AZ=[]
+    sat_EL=[]
+    for i in range(0,len(zTest_ECF_vel_rel)):
+        zTest_ECF_vel_rel[i]=zTest_ECF_vel_rel[i][:][0]
     Num_of_iterations=len(time)/Satnum_iteration
     for i in range(0,int(Num_of_iterations)):
         #Iterates through time and timesince epoch for a specific Satellite
         
         #This is done because the time and T_list for a specific sat is seperated by the lenght of a Satlist
         sat_time.append(time[int(val)+i*Satnum_iteration])
-        time_since_epoch_sec.append(t_list[int(val)+i*Satnum_iteration])
+        time_since_epoch_sec_sat.append(t_list[int(val)+i*Satnum_iteration])
         sat_position.append(position[int(val)+i*Satnum_iteration])
         sat_velocity.append(velocity[int(val)+i*Satnum_iteration])
+        sat_position_ECF.append(zTest_ECF_R[int(val)+i*Satnum_iteration])
+        sat_velocity_ECF.append(zTest_ECF_vel_rel[int(val)+i*Satnum_iteration])
+        sat_AZ.append(AZ[int(val)+i*Satnum_iteration])
+        sat_EL.append(EL[int(val)+i*Satnum_iteration])
+                                                 
 
 
 
 # Accessing other Functions
         
     #Change to right format    
-    EpochTimeString=dt.datetime.strftime(Epochdt_list[int(val)],"%d-%b-%Y %H:%M:%S")  
-    STKout('EphemFileExample.txt',EpochTimeString,time_since_epoch_sec,Coord,sat_position,sat_velocity)
+    EpochTimeString=dt.datetime.strftime(Epochdt_list[int(val)],"%d %b %Y %H:%M:%S")  
+    STKout('EphemFileExampleInertial.e',EpochTimeString,time_since_epoch_sec_sat,Coord,sat_position,sat_velocity)
+    
+    
+        #UNPACKING 
+    STKout('EphemFileExamFixed.e',EpochTimeString,time_since_epoch_sec_sat,"Fixed",(sat_position_ECF),(sat_velocity_ECF))
 
-
-    STKsp(AZ,EL,time_since_epoch_sec)
+    STKsp(sat_AZ,sat_EL,time_since_epoch_sec_sat)
     return 
 
  # In[]
@@ -1089,7 +1108,7 @@ AZ_EL_csvwriter("AZ_EL.csv",Satnum_avail,AZ_avail,EL_avail,Times_avail)
 
 # Output
  
-Output_function('Inertial',zTest_ECI_R,zTest_ECI_v,time,time_since_epoch_sec,Epochdt_list)
+Output_function('Inertial',zTest_ECI_R,zTest_ECI_v,time,time_since_epoch_sec,Epochdt_list,AZ,EL)
 
 
     
