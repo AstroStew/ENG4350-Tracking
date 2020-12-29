@@ -4,6 +4,7 @@
 The Code follows the Suggested Programming Structure (see Suggested_Programming_Structure.png)- this is also outlined in the Software Specifications document.
 
 ### Inputs
+Inputs are in File called "Reference Files"
 - Station Location
 - TLE file
 - Tracking Schedule
