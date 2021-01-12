@@ -1140,13 +1140,12 @@ def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,A
     STKsp(sat_AZ,sat_EL,time_since_epoch_sec_sat,spFileName)
     
     
-    print ('\n UTC\t AZ Deg EL Deg AZ-Vel (deg/sec) El-Vel (deg/sec Range (km)/sec Doppler KHz Level dBm\n')
+    print ('\n UTC\t AZ (Deg) EL Deg AZ-Vel (deg/sec) El-Vel (deg/sec) Range (km)/sec) Doppler KHz Level dBm\n')
 #Outputting Tracking Data   
     for j in range(0,len(sat_time)):
         DOY_=doy(sat_time[j].year, sat_time[j].month, sat_time[j].day)
-        print('{0:4.0f}{1:1}{2:3}{3:1}{4:8} {5:3.0f} {6:2.0f} {7:3.1f} {8:3.1f}  {9:2.0f} {10:2.0f} {11:3.1f} {12:3.1f}\n'\
-                       .format(sat_time[i].year,"-",DOY_,"-",sat_time[i].ctime()[11:19],int(sat_AZ[i]),(sat_AZ[i]*60)%60,\
-                           (sat_AZ[i]*3600)%60,sat_AZ_rate[i],int(sat_EL[i]),(sat_EL[i]*60)%60,(sat_EL[i]*3600)%60,sat_EL_rate[i]))
+        print('{0:4.0f}{1:1}{2:3}{3:1}{4:8} {5:5.2f} {6:5.2f} {7:5.2f} {8:5.2f}  {9:5.0f} {10:6.3f} {11:3.0f} \n'\
+                       .format(sat_time[j].year,"-",DOY_,"-",sat_time[j].ctime()[11:19],sat_AZ[j],sat_EL[j],sat_AZ_rate[j],sat_EL_rate[j],sat_Range[j],sat_DS[j],sat_dB[j]))
     
    # ,sat_AZ,sat_EL,sat_AZ_rate,sat_EL_rate,sat_Range,sat_v_rel_ti,sat_dB
     TrackingDataYN=input("Is this data acceptable?(Y/N)")
@@ -1159,19 +1158,26 @@ def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,A
         
         
         #Writing Header
-        file.write("#ARO CONTROL FILE\n")
-        file.write("#Station: ARO\n")
-        file.write("#UTC DATE/TIME\t Azimuth and AZ_Velocity     Elevation and EL_Velocity\n")
+        file.write("# ARO Control file - Authors Michael and Abdul. Satellite :")
+        file.write(SatList[int(val)].name)
+        
+        
+        
         
         
     
         for i in range(0,len(sat_time)):
             DOY_=doy(sat_time[i].year, sat_time[i].month, sat_time[i].day)
             #Claculates Day of Year for time instant
-            
-            file.write('{0:4.0f}{1:1}{2:3}{3:1}{4:8} {5:3.0f} {6:2.0f} {7:3.1f} {8:3.1f}     {9:2.0f} {10:2.0f} {11:3.1f} {12:3.1f}\n'\
+            if (sat_EL[i]>0):
+                
+                file.write('{0:4.0f}{1:1}{2:3}{3:1}{4:8}  {5:03.0f} {6:02.0f} {7:04.1f} {8: 9.6f} {9:1}{10:02.0f} {11:02.0f}  {12:04.1f} {13: 9.6f}\n'\
                        .format(sat_time[i].year,".",DOY_,".",sat_time[i].ctime()[11:19],int(sat_AZ[i]),(sat_AZ[i]*60)%60,\
-                           (sat_AZ[i]*3600)%60,sat_AZ_rate[i],int(sat_EL[i]),(sat_EL[i]*60)%60,(sat_EL[i]*3600)%60,sat_EL_rate[i]))
+                           (sat_AZ[i]*3600)%60,sat_AZ_rate[i]," ",int(sat_EL[i]),(sat_EL[i]*60)%60,(sat_EL[i]*3600)%60,sat_EL_rate[i]))
+            else :
+                file.write('{0:4.0f}{1:1}{2:3}{3:1}{4:8}  {5:03.0f} {6:02.0f} {7:04.1f} {8: 9.6f} {9:1}{10:02.0f} {11:02.0f}  {12:04.1f} {13: 9.6f}\n'\
+                       .format(sat_time[i].year,".",DOY_,".",sat_time[i].ctime()[11:19],int(sat_AZ[i]),(sat_AZ[i]*60)%60,\
+                           (sat_AZ[i]*3600)%60,sat_AZ_rate[i],"-",int(-sat_EL[i]),(sat_EL[i]*60)%60,(sat_EL[i]*3600)%60,sat_EL_rate[i]))
         # for i is in time, we iterate through the list to write in the values to the value
             
             
@@ -1190,7 +1196,7 @@ def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,A
 
 #Assuming That The Use has already initialized all necessary functions and classes
 # The Main Program can be deduced to this
-[StationInstance,SatList,Tracking,LinkData]=User_Input_parser_Call(r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6\Station.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6\gps-ops.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6\TrackingData.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6\LinkInputs.txt')
+[StationInstance,SatList,Tracking,LinkData]=User_Input_parser_Call(r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6+\Input Files\Station.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6+\Input Files\gps-ops.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6+\Input Files\TrackingData.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6+\Input Files\LinkInputs.txt')
 # This call function creates instances of each file that can be easily manipulated in Python.
 
 #This function calls upon the Satellite position velocity calculator functions
@@ -1198,7 +1204,7 @@ def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,A
 
 
 #Gathers Link Inputs and assigns them as variables
-[freq,Antennaeff,AntennaDia]=linkInputscall(r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6\LinkInputs.txt')
+[freq,Antennaeff,AntennaDia]=linkInputscall(r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6+\Input Files\LinkInputs.txt')
 #MHZ
 
 
@@ -1231,7 +1237,7 @@ ChosenSat_Output_function(zTest_ECI_R,zTest_ECI_v,time,time_since_epoch_sec,Epoc
                     'D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/EphemFileExampleInertial.e',\
                         'D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/EphemFileExampleFixed.e',\
                             "D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/STKSP.sp",\
-                                "D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/ControlFile.txt")
+                                "D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/ControlFile.ascii")
     
 
 
