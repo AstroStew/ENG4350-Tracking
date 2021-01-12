@@ -7,7 +7,7 @@ Created on Sun Oct  4 18:54:39 2020
 ##                  Draft Version 1
 
 
- ##                                 Import Sections
+ ##                                 Import Section
 import datetime as dt
 import numpy as np
 import math
@@ -82,7 +82,7 @@ def referenceepoch_propagate(TrackingData):
     
     # In[]
 def THETAN(time_array):
-    #Change refepoch to dateobi
+    
     
     #Input is a refepoch array this dsoesn't make sense as Tracking Data contains an easily parsible 
     
@@ -127,6 +127,14 @@ def THETAN(time_array):
 def mean_anomaly_motion(time,ts_sat_epoch,M0_mean_anomaly,n_mean_motion, \
                         n_dot_mean_motion,n_2dots_mean_motion):
     
+    
+    # n_mean_motion= SatList[i].meanmo #rev/day
+    # M0_mean Anomally is SatList[i].meanan in degrees
+    # n_dot_mean_motion is ndot/2 from the TLE data
+    # n_2dots_mean_motion is n2dot/6 taken directly form TLE data
+    
+    
+    
     #Assume Reference Epcoh is in TLE format
     refepoch=str(ts_sat_epoch)
     Epochdt=refepoch_to_dt(refepoch)
@@ -136,14 +144,16 @@ def mean_anomaly_motion(time,ts_sat_epoch,M0_mean_anomaly,n_mean_motion, \
     #assume Time is datetime object
     
     t=(time-Epochdt).total_seconds()
+    #time since Epoch in TLE
+    
     time_since_epoch_sec.append(t)
     
     
     
     
     Mt_mean_anomaly=M0_mean_anomaly+ \
-        n_mean_motion*360*(t/86400)+360*(n_dot_mean_motion/2)*((t/86400)**2)+ \
-        360*(n_2dots_mean_motion/6)*((t/86400)**3)
+        n_mean_motion*360*((t/86400))+360*(n_dot_mean_motion)*((t/86400)**2)+ \
+        360*(n_2dots_mean_motion)*((t/86400)**3)
         #outputs in deg
         
     Nt_mean_anomaly_motion=n_mean_motion* \
@@ -156,7 +166,7 @@ def mean_anomaly_motion(time,ts_sat_epoch,M0_mean_anomaly,n_mean_motion, \
     #Removing Mutlples
     Mt_mean_anomaly=Mt_mean_anomaly%360
     
-    # Low Level Debug Helper
+    # Low Level Debug Helper for testing Mean Motion 
     global zTest_Mt_Mean_anomaly, zTest_Nt_mean_anomaly_motion
     
     try:
@@ -470,11 +480,11 @@ class Satellite():
         self.incl=line2[8:16]
         self.raan=line2[17:25]
         self.eccn="."+line2[26:33]
-        self.argper=line2[34:42]
-        self.meanan=line2[43:51]
-        self.meanmo=line2[52:63]
-        self.ndot=line1[33:43]
-        self.n2dot=line1[44:50]
+        self.argper=line2[34:42] #degrees
+        self.meanan=line2[43:51] #degrees
+        self.meanmo=line2[52:63] #rev per day 
+        self.ndot=line1[33:43] #is actually nodot/2
+        self.n2dot=line1[44:50] #is actually n2dot/6
         self.bstar=line1[53:61]
         self.orbitnum=line2[63:68]
     # In[]
@@ -1002,16 +1012,16 @@ def STKsp(AZ,EL,time):
         
         # In[]
 #This function write the Mater.csv file which is used extensively for Debugging
-def Master_csvwriter(filename,AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean):
+def Master_csvwriter(filename,AZ,EL,Rate_of_AZ,Rate_of_EL,Mean_anomaly,Mean_anomaly_motion,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean):
     with open(filename,mode='w+',newline='') as csv_file:
         
         csv_writer=csv.writer(csv_file,delimiter=',',quotechar='"', quoting=csv.QUOTE_MINIMAL)
         csv_writer.writerow(["Perifocal Range","Perifocal Velocity","ECI Position","ECI_Velocity","ECF Position","ECF Velocity" \
-                             ,"Azimuth","Elevation","Rate of AZ","Rate of EL","Topocentric Range",\
-                                 "Topocentric Reletive Velocity","Time","Satellite Name","Avilable for View TRUE=1", \
+                             ,"Azimuth","Elevation","Rate of AZ","Rate of EL","Mean Anom @time","Mean Anom Motion @time","Topocentric Range",\
+                                 "Topocentric Reletive Velocity","Time","Time Since Epoch","Satellite Name","Avilable for View TRUE=1", \
                                      "Signal Acquired","Signal Lost"])
         for s in range(0,len(AZ)):
-           csv_writer.writerow([zTest_R_per[s],zTest_v_per[s],zTest_ECI_R[s],zTest_ECI_v[s],zTest_ECF_R[s],zTest_ECF_vel_rel[s],AZ[s],EL[s],Rate_of_AZ[s],Rate_of_EL[s],R_ti[s],v_rel_ti[s],time[s],SatList[Satnum[s]].name,Avail_list[s],AOS_List_boolean[s],LOS_List_boolean[s]])
+           csv_writer.writerow([zTest_R_per[s],zTest_v_per[s],zTest_ECI_R[s],zTest_ECI_v[s],zTest_ECF_R[s],zTest_ECF_vel_rel[s],AZ[s],EL[s],Rate_of_AZ[s],Rate_of_EL[s],Mean_anomaly[s],Mean_anomaly_motion[s],R_ti[s],v_rel_ti[s],time[s],time_since_epoch_sec[s],SatList[Satnum[s]].name,Avail_list[s],AOS_List_boolean[s],LOS_List_boolean[s]])
        
         csv_file.close    
         return 
@@ -1111,6 +1121,7 @@ def Output_function(Coord,position,velocity,time,t_list,Epochdt_list,AZ,EL):
 
 [freq,Antennaeff,AntennaDia]=linkcal(r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6\LinkInputs.txt')
 Signal_loss=TrackingData(freq,Antennaeff,AntennaDia,R_ti)
+
 [AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List]=Pointing(StationInstance,AZ,EL,time,Satnum,Signal_loss)
 #Visibility creates a formatted list 
 AOS_LOS_list=Visibility(StationInstance,AZ,EL,time,Satnum,Signal_loss)
@@ -1120,7 +1131,7 @@ AOS_LOS_list=Visibility(StationInstance,AZ,EL,time,Satnum,Signal_loss)
 os.makedirs(os.path.dirname("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/Master.csv"),exist_ok=True)
 
 #writing to a csv file
-Master_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/Master.csv",AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean)
+Master_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/Master.csv",AZ,EL,Rate_of_AZ,Rate_of_EL,zTest_Mt_Mean_anomaly,zTest_Nt_mean_anomaly_motion,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean)
 AOS_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/AOS_LOS.csv",AOS_LOS_list)
 AZ_EL_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/AZ_EL.csv",Satnum_avail,AZ_avail,EL_avail,Times_avail)
 #Outputs AZ in Rads
