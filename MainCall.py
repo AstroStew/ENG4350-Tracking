@@ -22,6 +22,7 @@ import os
 
 
 
+
  ##                   Satellite Position,Velocity Calculator Functions
 
 
@@ -498,6 +499,7 @@ class Satellite():
         self.bstar=line1[53:61]
         self.orbitnum=line2[63:68]
     # In[]
+#Propagates the SatList with Satellites from TLE file
 def SatListPropagate(SatFIL):
     Satfile=open(SatFIL,'rt')
     entries=(len(open(SatFIL).readlines()))/3
@@ -859,12 +861,12 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
 #def Link_Calculations(LinkData):
 
 
-def linkcal(linkdat):
-  Linkcalcfile=open(linkdat, 'rt')
-  frequency=Linkcalcfile.readline()
-  Antennaeff=Linkcalcfile.readline()
-  AntennaDia=Linkcalcfile.readline()
-  Linkcalcfile.close
+def linkInputscall(linkdat):
+  Linkcallfile=open(linkdat, 'rt')
+  frequency=Linkcallfile.readline()
+  Antennaeff=Linkcallfile.readline()
+  AntennaDia=Linkcallfile.readline()
+  Linkcallfile.close
   #signalloss=20*math.log(10,4*math.pi*(float(AntennaDia))/(3.0e8*float(frequency)*1e6))
   return frequency,Antennaeff,AntennaDia
 
@@ -922,12 +924,17 @@ def Visibility(StationInstance,AZ,EL,times,Satnum,Signal_lost):
     
     return Unique_AOS_LOS
     # In[]
-def TrackingData(freq,Antennaeff,AntennaDia,R_ti):
+def SingalCalc(freq,Antennaeff,AntennaDia,R_ti):
     Signal_loss=[]
+    DopplerShift_list=[]
     for i in range(0,len(R_ti)):
         R=np.linalg.norm(R_ti[i])
         Signal_loss.append(20*math.log(10,4*math.pi*(float(R))/(3.0e8*float(freq)*1e6)))
-    return Signal_loss
+        v=np.dot(v_rel_ti[i],R_ti[i])/R
+        #output in km
+        c=(2.998e+8)/1000 #m/s->km/s
+        DopplerShift_list.append(-v*float(freq)*1e6/c) #converts frequency to Hz
+    return Signal_loss,DopplerShift_list
 
  
    
@@ -992,15 +999,15 @@ def STKout(EphemFile,Epochtime,time,Coord,position,velocity):
     file_1.close()
 
 # In[]
-def STKsp(AZ,EL,time):
+def STKsp(AZ,EL,time,SpFile):
    #This function outputs the Pointing File used with STK    
     
     #Takes in Aximuth and Elevatyion in Radians
         #We should have an input file name. I've provided one here to help
-        spFile="D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/STKSP.sp"
+        
         
         #opens file
-        file_2=open(spFile,"w+")
+        file_2=open(SpFile,"w+")
         
         NumofAttitudes=len(time) 
         
@@ -1064,10 +1071,43 @@ def AZ_EL_csvwriter(filename,Satnum_avail,AZ_avail,EL_avail,Time_Avail):
        
         csv_file.close    
         return
+# In[]
+def makeTable(headerRow,columnizedData,columnSpacing=2):
+    
+    #This function was imported from 
+    """
+    Author: Christopher Collett
+    Date: 6/1/2019"""
+    from numpy import array,max,vectorize
+
+    cols = array(columnizedData,dtype=str)
+    colSizes = [max(vectorize(len)(col)) for col in cols]
+
+    header = ''
+    rows = ['' for i in cols[0]]
+
+    for i in range(0,len(headerRow)):
+        if len(headerRow[i]) > colSizes[i]: colSizes[i]=len(headerRow[i])
+        headerRow[i]+=' '*(colSizes[i]-len(headerRow[i]))
+        header+=headerRow[i]
+        if not i == len(headerRow)-1: header+=' '*columnSpacing
+
+        for j in range(0,len(cols[i])):
+            if len(cols[i][j]) < colSizes[i]:
+                cols[i][j]+=' '*(colSizes[i]-len(cols[i][j])+columnSpacing)
+            rows[j]+=cols[i][j]
+            if not i == len(headerRow)-1: rows[j]+=' '*columnSpacing
+
+    line = '-'*len(header)
+    print(line)
+    print(header)
+    print(line)
+    for row in rows: print(row)
+    print(line)    
     
     # In[]
 
-def Output_function(Coord,position,velocity,time,t_list,Epochdt_list,AZ,EL):
+def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,AZ_rate,EL_Rate,R_ti,v_rel_ti,Sat_dB,DopplerShift,InertialEpemFileName,FixedEphemFileName,spFileName):
     
 
     val=input("Enter the Satellite Index to Output in .sp and .e file:")
@@ -1082,6 +1122,14 @@ def Output_function(Coord,position,velocity,time,t_list,Epochdt_list,AZ,EL):
     sat_velocity_ECF=[]
     sat_AZ=[]
     sat_EL=[]
+    sat_AZ_rate=[]
+    sat_EL_rate=[]
+    sat_Range=[]
+    sat_v_rel_ti=[]
+    sat_dB=[]
+    sat_DS=[]
+    
+    
     for i in range(0,len(zTest_ECF_vel_rel)):
         zTest_ECF_vel_rel[i]=zTest_ECF_vel_rel[i][:][0]
     Num_of_iterations=len(time)/Satnum_iteration
@@ -1089,29 +1137,48 @@ def Output_function(Coord,position,velocity,time,t_list,Epochdt_list,AZ,EL):
         #Iterates through time and timesince epoch for a specific Satellite
         
         #This is done because the time and T_list for a specific sat is seperated by the lenght of a Satlist
+        
+        
+        #Here we gather oall the data corresponding to the selected Satellite
         sat_time.append(time[int(val)+i*Satnum_iteration])
         time_since_epoch_sec_sat.append(t_list[int(val)+i*Satnum_iteration])
         sat_position.append(position[int(val)+i*Satnum_iteration])
         sat_velocity.append(velocity[int(val)+i*Satnum_iteration])
         sat_position_ECF.append(zTest_ECF_R[int(val)+i*Satnum_iteration])
         sat_velocity_ECF.append(zTest_ECF_vel_rel[int(val)+i*Satnum_iteration])
-        sat_AZ.append(AZ[int(val)+i*Satnum_iteration])
-        sat_EL.append(EL[int(val)+i*Satnum_iteration])
-                                                 
+        sat_AZ.append(round(AZ[int(val)+i*Satnum_iteration],3))
+        sat_EL.append(round(EL[int(val)+i*Satnum_iteration],3))
+        sat_AZ_rate.append(round(AZ_rate[int(val)+i*Satnum_iteration],3))
+        sat_EL_rate.append(round(EL_Rate[int(val)+i*Satnum_iteration],3))
+        sat_Range.append(round(np.linalg.norm(R_ti[int(val)+i*Satnum_iteration]),0))
+        sat_v_rel_ti.append(round(np.linalg.norm(v_rel_ti[int(val)+i*Satnum_iteration]),0))
+        sat_dB.append(round(Sat_dB[int(val)+i*Satnum_iteration],2))
+                                                
+        sat_DS.append(round(DopplerShift[int(val)+i*Satnum_iteration]/1000,3))
 
 
 
-# Accessing other Functions
+# Outputting STK files
         
     #Change to right format    
     EpochTimeString=dt.datetime.strftime(Epochdt_list[int(val)],"%d %b %Y %H:%M:%S")  
-    STKout('D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/EphemFileExampleInertial.e',EpochTimeString,time_since_epoch_sec_sat,"Inertial",sat_position,sat_velocity)
+    STKout(InertialEpemFileName,EpochTimeString,time_since_epoch_sec_sat,"Inertial",sat_position,sat_velocity)
     
     
         #UNPACKING 
-    STKout('D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/EphemFileExampleFixed.e',EpochTimeString,time_since_epoch_sec_sat,"Fixed",(sat_position_ECF),(sat_velocity_ECF))
+    STKout(FixedEphemFileName,EpochTimeString,time_since_epoch_sec_sat,"Fixed",(sat_position_ECF),(sat_velocity_ECF))
 
-    STKsp(sat_AZ,sat_EL,time_since_epoch_sec_sat)
+    STKsp(sat_AZ,sat_EL,time_since_epoch_sec_sat,spFileName)
+    
+#Outputting Tracking Data   
+    header=['UTC','Az','El','Az Rate','El Rate','Range','Range Rate','Doppler Shift kHz','Level dBm']
+    makeTable(header,[sat_time,sat_AZ,sat_EL,sat_AZ_rate,sat_EL_rate,sat_Range,sat_v_rel_ti,sat_DS,sat_dB])
+    
+   # ,sat_AZ,sat_EL,sat_AZ_rate,sat_EL_rate,sat_Range,sat_v_rel_ti,sat_dB
+    TrackingDataYN=input("Is this data acceptable?(Y/N)")
+    if TrackingDataYN=='Y':
+        print('...Printing Control Data...')
+    
     return 
 
  # In[]
@@ -1124,20 +1191,31 @@ def Output_function(Coord,position,velocity,time,t_list,Epochdt_list,AZ,EL):
 # The Main Program can be deduced to this
 [StationInstance,SatList,Tracking,LinkData]=User_Input_parser_Call(r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6\Station.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6\gps-ops.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6\TrackingData.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6\LinkInputs.txt')
 # This call function creates instances of each file that can be easily manipulated in Python.
-#Instances include
 
+#This function calls upon the Satellite position velocity calculator functions
 [AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,time,Satnum]=Sat_pos_velCall(StationInstance,SatList,Tracking)
 
 
-[freq,Antennaeff,AntennaDia]=linkcal(r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6\LinkInputs.txt')
-Signal_loss=TrackingData(freq,Antennaeff,AntennaDia,R_ti)
+#Gathers Link Inputs and assigns them as variables
+[freq,Antennaeff,AntennaDia]=linkInputscall(r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6\LinkInputs.txt')
+#MHZ
+
+
+#Calculates Signal loss
+[Signal_loss,DopplerShift]=SingalCalc(freq,Antennaeff,AntennaDia,R_ti)
+#
+
+
+
+
 
 [AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List]=Pointing(StationInstance,AZ,EL,time,Satnum,Signal_loss)
+
 #Visibility creates a formatted list 
 AOS_LOS_list=Visibility(StationInstance,AZ,EL,time,Satnum,Signal_loss)
 
 
-
+#Outputs CSV Files
 os.makedirs(os.path.dirname("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/Master.csv"),exist_ok=True)
 
 #writing to a csv file
@@ -1147,8 +1225,12 @@ AZ_EL_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputF
 #Outputs AZ in Rads
 
 
-# Output 
-Output_function('Inertial',zTest_ECI_R,zTest_ECI_v,time,time_since_epoch_sec,Epochdt_list,AZ,EL)
+# Outputs STK files
+ChosenSat_Output_function(zTest_ECI_R,zTest_ECI_v,time,time_since_epoch_sec,Epochdt_list,AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,Signal_loss,DopplerShift,\
+                    'D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/EphemFileExampleInertial.e',\
+                        'D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/EphemFileExampleFixed.e',\
+                            "D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/STKSP.sp")
+    
 
 
     
