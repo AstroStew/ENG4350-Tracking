@@ -259,8 +259,8 @@ def perifocal(eccentricity,ecc_anomaly,a_semi_major_axis,omega_longitude_ascendi
     
     #Calculating True Anomaly
     true_anom=2*(np.arctan(math.sqrt((1+eccentricity)/ \
-                                     (1-eccentricity)))*np.tan(ecc_anomaly/2))
-    true_anom=((np.arctan2(math.sin(true_anom),math.cos(true_anom)))+2*math.pi)%(2*math.pi)
+                                     (1-eccentricity))*np.tan(ecc_anomaly/2)))
+    #true_anom=((np.arctan2(math.sin(true_anom),math.cos(true_anom)))+2*math.pi)%(2*math.pi)
     
         #radians
     # different approach
@@ -362,16 +362,18 @@ def station_ECF(station_longitude,station_latitude,station_elevation):
     #geodetic longitde must be in degs
     #geodetic latitude must be in degs
     #station elevation must be in km
-    phi=(float(station_latitude)*math.pi/180)
+    
+    phi=np.deg2rad(float(station_latitude))
     h=float(station_elevation)
-    lambda_=float(station_longitude)*math.pi/180
-    e=math.sqrt(2*f-f**2)
-    n_phi=R_e/(math.sqrt(1-(e**2)*(math.sin(phi))**2))
+    
+    lambda_=np.deg2rad(float(station_longitude))
+    e_=math.sqrt(2*f-f**2)
+    n_phi=R_e/(math.sqrt(1-(e_**2)*(math.sin(phi))**2))
     
     
     T_x=(n_phi+h)*math.cos(phi)*math.cos(lambda_)
     T_y=(n_phi+h)*math.cos(phi)*math.sin(lambda_)
-    T_z=(((1-e**2)*n_phi+h)*math.sin(phi))
+    T_z=(((1-e_**2)*n_phi+h)*math.sin(phi))
     
     #R_x=station_body_position[0]-T_x
     #R_y=station_body_position[1]-T_y
@@ -436,6 +438,7 @@ def range_topo2look_angle(range_topo_position,range_topo_velocity):
     
     #Calculates the AZ and EL
     AZ=(np.arctan2(R[0],R[1])+2*math.pi)%(2*math.pi)
+    #AZ=np.arctan2(R[0],R[1])
     EL=math.atan(R[2]/(math.sqrt(R[0]**2+R[1]**2))) #Range is 0->90
     
     
@@ -1034,11 +1037,11 @@ def Master_csvwriter(filename,AZ,EL,Rate_of_AZ,Rate_of_EL,Mean_anomaly,Mean_anom
         
         csv_writer=csv.writer(csv_file,delimiter=',',quotechar='"', quoting=csv.QUOTE_MINIMAL)
         csv_writer.writerow(["Perifocal Range","Perifocal Velocity","ECI Position","ECI_Velocity","ECF Position","ECF Velocity" \
-                             ,"Azimuth","Elevation","Rate of AZ","Rate of EL","Mean Anom @time","Mean Anom Motion @time","Topocentric Range",\
+                             ,"Azimuth","Elevation","Rate of AZ","Rate of EL","Mean Anom @time","Mean Anom Motion @time","Eccentric Anomaly","Topocentric Range",\
                                  "Topocentric Reletive Velocity","Time","Time Since Epoch","Satellite Name","Avilable for View TRUE=1", \
                                      "Signal Acquired","Signal Lost"])
         for s in range(0,len(AZ)):
-           csv_writer.writerow([zTest_R_per[s],zTest_v_per[s],zTest_ECI_R[s],zTest_ECI_v[s],zTest_ECF_R[s],zTest_ECF_vel_rel[s],AZ[s],EL[s],Rate_of_AZ[s],Rate_of_EL[s],Mean_anomaly[s],Mean_anomaly_motion[s],R_ti[s],v_rel_ti[s],time[s],time_since_epoch_sec[s],SatList[Satnum[s]].name,Avail_list[s],AOS_List_boolean[s],LOS_List_boolean[s]])
+           csv_writer.writerow([zTest_R_per[s],zTest_v_per[s],zTest_ECI_R[s],zTest_ECI_v[s],zTest_ECF_R[s],zTest_ECF_vel_rel[s],AZ[s],EL[s],Rate_of_AZ[s],Rate_of_EL[s],Mean_anomaly[s],Mean_anomaly_motion[s],zTest_Ecc_anom[s],R_ti[s],v_rel_ti[s],time[s],time_since_epoch_sec[s],SatList[Satnum[s]].name,Avail_list[s],AOS_List_boolean[s],LOS_List_boolean[s]])
        
         csv_file.close    
         return 
