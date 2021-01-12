@@ -1072,42 +1072,11 @@ def AZ_EL_csvwriter(filename,Satnum_avail,AZ_avail,EL_avail,Time_Avail):
         csv_file.close    
         return
 # In[]
-def makeTable(headerRow,columnizedData,columnSpacing=2):
-    
-    #This function was imported from 
-    """
-    Author: Christopher Collett
-    Date: 6/1/2019"""
-    from numpy import array,max,vectorize
-
-    cols = array(columnizedData,dtype=str)
-    colSizes = [max(vectorize(len)(col)) for col in cols]
-
-    header = ''
-    rows = ['' for i in cols[0]]
-
-    for i in range(0,len(headerRow)):
-        if len(headerRow[i]) > colSizes[i]: colSizes[i]=len(headerRow[i])
-        headerRow[i]+=' '*(colSizes[i]-len(headerRow[i]))
-        header+=headerRow[i]
-        if not i == len(headerRow)-1: header+=' '*columnSpacing
-
-        for j in range(0,len(cols[i])):
-            if len(cols[i][j]) < colSizes[i]:
-                cols[i][j]+=' '*(colSizes[i]-len(cols[i][j])+columnSpacing)
-            rows[j]+=cols[i][j]
-            if not i == len(headerRow)-1: rows[j]+=' '*columnSpacing
-
-    line = '-'*len(header)
-    print(line)
-    print(header)
-    print(line)
-    for row in rows: print(row)
-    print(line)    
+   
     
     # In[]
 
-def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,AZ_rate,EL_Rate,R_ti,v_rel_ti,Sat_dB,DopplerShift,InertialEpemFileName,FixedEphemFileName,spFileName):
+def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,AZ_rate,EL_Rate,R_ti,v_rel_ti,Sat_dB,DopplerShift,InertialEpemFileName,FixedEphemFileName,spFileName,ControlFileName):
     
 
     val=input("Enter the Satellite Index to Output in .sp and .e file:")
@@ -1146,15 +1115,15 @@ def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,A
         sat_velocity.append(velocity[int(val)+i*Satnum_iteration])
         sat_position_ECF.append(zTest_ECF_R[int(val)+i*Satnum_iteration])
         sat_velocity_ECF.append(zTest_ECF_vel_rel[int(val)+i*Satnum_iteration])
-        sat_AZ.append(round(AZ[int(val)+i*Satnum_iteration],3))
-        sat_EL.append(round(EL[int(val)+i*Satnum_iteration],3))
-        sat_AZ_rate.append(round(AZ_rate[int(val)+i*Satnum_iteration],3))
-        sat_EL_rate.append(round(EL_Rate[int(val)+i*Satnum_iteration],3))
-        sat_Range.append(round(np.linalg.norm(R_ti[int(val)+i*Satnum_iteration]),0))
-        sat_v_rel_ti.append(round(np.linalg.norm(v_rel_ti[int(val)+i*Satnum_iteration]),0))
-        sat_dB.append(round(Sat_dB[int(val)+i*Satnum_iteration],2))
+        sat_AZ.append((np.rad2deg(AZ[int(val)+i*Satnum_iteration])))
+        sat_EL.append((np.rad2deg(EL[int(val)+i*Satnum_iteration])))
+        sat_AZ_rate.append((np.rad2deg(AZ_rate[int(val)+i*Satnum_iteration])))
+        sat_EL_rate.append((np.rad2deg(EL_Rate[int(val)+i*Satnum_iteration])))
+        sat_Range.append((np.linalg.norm(R_ti[int(val)+i*Satnum_iteration])))
+        sat_v_rel_ti.append((np.linalg.norm(v_rel_ti[int(val)+i*Satnum_iteration])))
+        sat_dB.append((Sat_dB[int(val)+i*Satnum_iteration]))
                                                 
-        sat_DS.append(round(DopplerShift[int(val)+i*Satnum_iteration]/1000,3))
+        sat_DS.append((DopplerShift[int(val)+i*Satnum_iteration]/1000))
 
 
 
@@ -1165,20 +1134,52 @@ def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,A
     STKout(InertialEpemFileName,EpochTimeString,time_since_epoch_sec_sat,"Inertial",sat_position,sat_velocity)
     
     
-        #UNPACKING 
+         
     STKout(FixedEphemFileName,EpochTimeString,time_since_epoch_sec_sat,"Fixed",(sat_position_ECF),(sat_velocity_ECF))
 
     STKsp(sat_AZ,sat_EL,time_since_epoch_sec_sat,spFileName)
     
+    
+    print ('\n UTC\t AZ Deg EL Deg AZ-Vel (deg/sec) El-Vel (deg/sec Range (km)/sec Doppler KHz Level dBm\n')
 #Outputting Tracking Data   
-    header=['UTC','Az','El','Az Rate','El Rate','Range','Range Rate','Doppler Shift kHz','Level dBm']
-    makeTable(header,[sat_time,sat_AZ,sat_EL,sat_AZ_rate,sat_EL_rate,sat_Range,sat_v_rel_ti,sat_DS,sat_dB])
+    for j in range(0,len(sat_time)):
+        DOY_=doy(sat_time[j].year, sat_time[j].month, sat_time[j].day)
+        print('{0:4.0f}{1:1}{2:3}{3:1}{4:8} {5:3.0f} {6:2.0f} {7:3.1f} {8:3.1f}  {9:2.0f} {10:2.0f} {11:3.1f} {12:3.1f}\n'\
+                       .format(sat_time[i].year,"-",DOY_,"-",sat_time[i].ctime()[11:19],int(sat_AZ[i]),(sat_AZ[i]*60)%60,\
+                           (sat_AZ[i]*3600)%60,sat_AZ_rate[i],int(sat_EL[i]),(sat_EL[i]*60)%60,(sat_EL[i]*3600)%60,sat_EL_rate[i]))
     
    # ,sat_AZ,sat_EL,sat_AZ_rate,sat_EL_rate,sat_Range,sat_v_rel_ti,sat_dB
     TrackingDataYN=input("Is this data acceptable?(Y/N)")
     if TrackingDataYN=='Y':
         print('...Printing Control Data...')
+        
+        
+        file=open(ControlFileName,"w+")
+        
+        
+        
+        #Writing Header
+        file.write("#ARO CONTROL FILE\n")
+        file.write("#Station: ARO\n")
+        file.write("#UTC DATE/TIME\t Azimuth and AZ_Velocity     Elevation and EL_Velocity\n")
+        
+        
     
+        for i in range(0,len(sat_time)):
+            DOY_=doy(sat_time[i].year, sat_time[i].month, sat_time[i].day)
+            #Claculates Day of Year for time instant
+            
+            file.write('{0:4.0f}{1:1}{2:3}{3:1}{4:8} {5:3.0f} {6:2.0f} {7:3.1f} {8:3.1f}     {9:2.0f} {10:2.0f} {11:3.1f} {12:3.1f}\n'\
+                       .format(sat_time[i].year,".",DOY_,".",sat_time[i].ctime()[11:19],int(sat_AZ[i]),(sat_AZ[i]*60)%60,\
+                           (sat_AZ[i]*3600)%60,sat_AZ_rate[i],int(sat_EL[i]),(sat_EL[i]*60)%60,(sat_EL[i]*3600)%60,sat_EL_rate[i]))
+        # for i is in time, we iterate through the list to write in the values to the value
+            
+            
+        #writing closer 
+        print('Done!')
+        file.close 
+    else:
+        print("Okay Goodbye")
     return 
 
  # In[]
@@ -1229,7 +1230,8 @@ AZ_EL_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputF
 ChosenSat_Output_function(zTest_ECI_R,zTest_ECI_v,time,time_since_epoch_sec,Epochdt_list,AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,Signal_loss,DopplerShift,\
                     'D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/EphemFileExampleInertial.e',\
                         'D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/EphemFileExampleFixed.e',\
-                            "D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/STKSP.sp")
+                            "D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/STKSP.sp",\
+                                "D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/ControlFile.txt")
     
 
 
