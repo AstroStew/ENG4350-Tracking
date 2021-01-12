@@ -4,7 +4,12 @@ Created on Sun Oct  4 18:54:39 2020
 
 @author: mstew
 """
-##                  Draft Version 1
+##                  Final Version 
+
+#
+
+
+
 
 
  ##                                 Import Section
@@ -46,8 +51,10 @@ def refepoch_to_dt(refepoch):
 def doy(YR,MO,D):
     if len(str(MO))==1:
         MO='0'+ str(MO)
+        #makes sure Month is represented in 2 digits
     if len(str(D))==1:
         D='0'+ str(D)
+        #makes sure Day is in two digit format that is readable by strptime
     String=str(YR)+str(MO)+str(D)
     Time = dt.datetime.strptime(String,'%Y%m%d')
     #Converts First to dt
@@ -93,7 +100,7 @@ def THETAN(time_array):
     J2000=dt.datetime.strptime('2000-01-01 00:00:00','%Y-%m-%d %H:%M:%S')
     global Starttime
     Starttime=dt.datetime.strptime(Tracking.starttime,'%Y-%m-%d-%H:%M:%S')
-    #no need to 
+    
     
 
     
@@ -128,6 +135,7 @@ def mean_anomaly_motion(time,ts_sat_epoch,M0_mean_anomaly,n_mean_motion, \
                         n_dot_mean_motion,n_2dots_mean_motion):
     
     
+    #time- datetime object
     # n_mean_motion= SatList[i].meanmo #rev/day
     # M0_mean Anomally is SatList[i].meanan in degrees
     # n_dot_mean_motion is ndot/2 from the TLE data
@@ -137,11 +145,13 @@ def mean_anomaly_motion(time,ts_sat_epoch,M0_mean_anomaly,n_mean_motion, \
     
     #Assume Reference Epcoh is in TLE format
     refepoch=str(ts_sat_epoch)
+    
+    #Converts Reference Epoch Time to a Datetime Objects
     Epochdt=refepoch_to_dt(refepoch)
     
     
     Epochdt_list.append(Epochdt)
-    #assume Time is datetime object
+    
     
     t=(time-Epochdt).total_seconds()
     #time since Epoch in TLE
@@ -167,17 +177,17 @@ def mean_anomaly_motion(time,ts_sat_epoch,M0_mean_anomaly,n_mean_motion, \
     Mt_mean_anomaly=Mt_mean_anomaly%360
     
     # Low Level Debug Helper for testing Mean Motion 
-    global zTest_Mt_Mean_anomaly, zTest_Nt_mean_anomaly_motion
+    global zTest_Mt_Mean_anomaly, zTest_Nt_mean_anomaly_motion_rev_day
     
     try:
         
         zTest_Mt_Mean_anomaly.append(Mt_mean_anomaly)
-        zTest_Nt_mean_anomaly_motion.append(Nt_mean_anomaly_motion_rev_day)
+        zTest_Nt_mean_anomaly_motion_rev_day.append(Nt_mean_anomaly_motion_rev_day)
     except:
         zTest_Mt_Mean_anomaly=[]
         zTest_Mt_Mean_anomaly.append(Mt_mean_anomaly)
-        zTest_Nt_mean_anomaly_motion=[]
-        zTest_Nt_mean_anomaly_motion.append(Nt_mean_anomaly_motion_rev_day)
+        zTest_Nt_mean_anomaly_motion_rev_day=[]
+        zTest_Nt_mean_anomaly_motion_rev_day.append(Nt_mean_anomaly_motion_rev_day)
         
     
     
@@ -668,7 +678,7 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
         
         
       Time_dt=Time_dt+dt.timedelta(seconds=float(Tracking.timestep))
-      #At the End change Time
+      #At the End of the loop add time 
       
     
     
@@ -1131,7 +1141,7 @@ AOS_LOS_list=Visibility(StationInstance,AZ,EL,time,Satnum,Signal_loss)
 os.makedirs(os.path.dirname("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/Master.csv"),exist_ok=True)
 
 #writing to a csv file
-Master_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/Master.csv",AZ,EL,Rate_of_AZ,Rate_of_EL,zTest_Mt_Mean_anomaly,zTest_Nt_mean_anomaly_motion,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean)
+Master_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/Master.csv",AZ,EL,Rate_of_AZ,Rate_of_EL,zTest_Mt_Mean_anomaly,zTest_Nt_mean_anomaly_motion_rev_day,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean)
 AOS_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/AOS_LOS.csv",AOS_LOS_list)
 AZ_EL_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/AZ_EL.csv",Satnum_avail,AZ_avail,EL_avail,Times_avail)
 #Outputs AZ in Rads
