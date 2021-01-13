@@ -410,8 +410,8 @@ def range_ECF2topo(station_body_position, \
     
     #Intializes Transformation Matrix
     T_ECF_to_topo=[[-math.sin(station_longitude), \
-                    math.cos(station_latitude),0], \
-                   [math.cos(station_longitude)*math.sin(station_latitude), \
+                    math.cos(station_longitude),0], \
+                   [-math.cos(station_longitude)*math.sin(station_latitude), \
                     -math.sin(station_longitude)*math.sin(station_latitude), \
                     math.cos(station_latitude)],[math.cos(station_longitude) \
                                                  *math.cos(station_latitude), \
@@ -421,7 +421,7 @@ def range_ECF2topo(station_body_position, \
     
     
     #Transform Range Vector
-    R_ti=np.matmul(np.array(R),np.array(T_ECF_to_topo))
+    R_ti=np.matmul(np.array(T_ECF_to_topo),np.array(R))
     
     # Assuming that sat_ecf Velocity is Relative
     vel_rel=sat_ecf_velocity
