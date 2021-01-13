@@ -14,16 +14,18 @@ Inputs are in File called "Reference Files"
 - Aqusition of Signal (AOS) List
 - Loss of Signal (LOS) List
 - Azimuth/Elevation (AZ/EL) Tables
+- Tracking Data (fazal document) to input into ARO
 
 ### Known Issues:
 #### Documentation Issues
 - Some Files are not properly sorted
+- Final Documentation needed
 #### Code Issues
 - Mean Anomally Off by 1 degree 
 - Eccentricity Anomaly off by 1.5 degrees
 - True Anomaly off by around 2 degrees
-- Perifocal frame x-axis is off by 1000km and reversed signs when compared to STK
-- Semi-major axis is off by 1 km
+- Topocentric Range z-axis doesn't output right values
+- Link Calculations need to be refined
 
 All Code Issues compared with STK plotted Values
-Last Revised: 23:13 28-12-2020 
+Last Revised: 23:13 2021-01-12 
