@@ -939,7 +939,7 @@ def Visibility(StationInstance,AZ,EL,times,Satnum,Signal_lost):
     
 
         
-    global Unique_AOS_LOS
+    
     Unique_AOS_LOS=[[],[],[],[],[]]
     uniquepairlist=[]
    
@@ -951,6 +951,7 @@ def Visibility(StationInstance,AZ,EL,times,Satnum,Signal_lost):
         Sat_Signal_Lost=AOS_LOS_list[i][4]
         
         uniquepair=str(Satname)+str(AOS_time)
+        #creates a unqie string of satellite number and AOS time. This ensures that only unqie AOS times for a satellite is shown in the list
         
         if (uniquepair) not in uniquepairlist :
             
@@ -967,34 +968,6 @@ def Visibility(StationInstance,AZ,EL,times,Satnum,Signal_lost):
     
     return Unique_AOS_LOS
 
-'''Temp_AOS_boolean=AOS_List_boolean
-    #we create temporary boolean lists to iterate through the AOS and LOS signals
-    Temp_LOS_boolean=LOS_List_boolean
-    for i in range (0,len((time))):
-        if (Temp_AOS_boolean[i]==1):
-            for j in range(0,len(times)):
-                if(Temp_LOS_boolean[j]==1 and Satnum[i]==Satnum[j] and time[j]>time[i]):
-                    #
-                    AppendList_=[Satnum[i],SatList[Satnum[i]].name,time[i],time[j],Signal_loss[i]]
-                    AOS_LOS_list.append(AppendList)
-                    
-                    #When a AOs and LOS pari has been established, they are revoked from the temporary boolean list 
-                    Temp_AOS_boolean[i]=0                
-                    Temp_LOS_boolean[j]=0
-                if(Satnum[i]==Satnum[j] and Avail_list[j]==1 and j==len(times)-1):
-                    #reached end of LOS list. output no LOS
-                    AppendList=[Satnum[i],SatList[Satnum[i]].name,time[i],"N/A",Signal_loss[i]]
-                    Temp_AOS_boolean[i]
-                    AOS_LOS_list.append(AppendList)
-                    
-                    
-                    
-                    
-                
-            
-    return AOS_LOS_list_
-
-'''
     # In[]
 def SignalCalc(freq,Antennaeff,AntennaDia,R_ti):
     Signal_loss=[]
@@ -1145,12 +1118,12 @@ def AZ_EL_csvwriter(filename,Satnum_avail,AZ_avail,EL_avail,Time_Avail):
         return
 # In[]
 def AOS_txtwriter(filename,AOS_LOS_List):
-    '''
+    
     file=open(filename,"w+")
     if(len(AOS_LOS_List[0])>0):
-        for i in range(0,len(AOS_LOS_List)):
-            file.write('{0:03.0} {1:6}\n'.format(float(AOS_LOS_List[0][i]),(AOS_LOS_List[1][i])))
-            '''
+        for i in range(0,len(AOS_LOS_List[0])):
+            file.write('{0:03}    {1:6}    {2:17}   {3:17} {4: 3}\n'.format(int(AOS_LOS_List[0][i]),((AOS_LOS_List[1][i]).split(")"))[0].split("(")[1] ,str(AOS_LOS_List[2][i]),str(AOS_LOS_List[3][i]),int(AOS_LOS_List[4][i])))
+            
         
     return 
         
