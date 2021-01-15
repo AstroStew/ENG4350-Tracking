@@ -92,7 +92,7 @@ def referenceepoch_propagate(TrackingData):
 def THETAN(time_array):
     
     
-    #Input is a refepoch array this dsoesn't make sense as Tracking Data contains an easily parsible 
+     
     
     
     GMST_list=[]
@@ -702,7 +702,8 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
 
     # In[]
 def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
-  
+  #isolates Available Azimuth and Elevations and Acquisition and Loss of Signal by comparing 
+    #the previous realized Azimuth and Elevation angles to the created Station instance
   
   #avail=available for viewing
   AZ_avail=[]
@@ -718,7 +719,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
   EL_LOS=[]
   Times_LOS=[]
   SatNum_LOS=[]
-  Satnum_iteration=max(Satnum_list)+1
+  Satnum_iteration=len(SatList)
   time_delta=time[1]-time[0]
   Signal_lost_AOS=[]
   Signal_lost_LOS=[]
@@ -741,6 +742,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
 
   
   for i in range(0,int(StnInstance.az_el_nlim)):
+      #Remember how the stop section of range is non-inclusive
       
       # For Each iteration of the Station Instation Limits
     ThisStationLimit=StnInstance.az_el_lim[i].split(",")
@@ -754,6 +756,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
     else:
         AZ_muth_min=0
         if(int(StnInstance.az_el_nlim)==1):
+            #If there uis 
             AZ_muth_max=math.pi*2
         
     
@@ -766,29 +769,37 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
       if AZ_list[j] > (AZ_muth_min) and AZ_muth_max > AZ_list[j] and (EL_lim_max) > EL_list[j] and EL_list[j] > (EL_lim_min):
         #compares Azimuth and Elevations to Limits
           
-          #Satellite Available
+          #If TRUE, Satellite is Available in given Limitation block
           
         
           #Compares to Previous Value
           # If previous value is not in limits but is now either AOS or from another limit iteration** 
-        if j >= (Satnum_iteration) and  Satnum_list[j] == Satnum_list[j-Satnum_iteration] and (AZ_list[j-Satnum_iteration] < float(AZ_muth_min) or AZ_list[j-Satnum_iteration] > float(AZ_muth_max) or float(EL_lim_max) < EL_list[j-Satnum_iteration] or EL_list[j-Satnum_iteration] < float(EL_lim_min)):
-            # A Signal has been acquired
+        if j >= Satnum_iteration and  Satnum_list[j] == Satnum_list[j-Satnum_iteration] \
+            and (AZ_list[j-Satnum_iteration] < float(AZ_muth_min) or AZ_list[j-Satnum_iteration] > float(AZ_muth_max) or float(EL_lim_max) < EL_list[j-Satnum_iteration] or EL_list[j-Satnum_iteration] < float(EL_lim_min)):
+            
+            # A Signal has been acquired    
+            #If values are available when they previously weren't. Signal is acquired.  
+            
+            
+            
+            
+            
             
             #** Here we test to see if the AOS was caused by limit bound issues or from actual AOS
             
             if i > 0:
                 
-                    
-                
-                
-                
-                append=0  
+                append=0
+                #Append identifier controls whether we consider this AOS and True AOS
                 for k in range(0,len(Times_LOS)):
                   
                     
                     if time[j] == Times_LOS[k] and Satnum[j]== SatNum_LOS[k]:
-                        append=0
+                        #If loss of signal's time and Satellite number are the same as the acqusition of singals time and Sat Num
+                        #Then we have a false Acqusition and Loss of Signal. 
                         #False Signal Acquire- Delete previous LOS
+                        append=0
+                        
                         del Times_LOS[k]
                         del SatNum_LOS[k]
                         del AZ_LOS[k]
@@ -796,7 +807,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
                         LOS_List_boolean[k]=0
                     else: 
                         append=1
-                        #True Signal Acquired
+                        #True AOS
                         
                         break
                 if append==1:
@@ -805,15 +816,25 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
                     Times_AOS.append(time[j])
                     SatNum_AOS.append(Satnum_list[j])
                     Signal_lost_AOS.append(Signal_lost[j])
-                    AOS_List_boolean[j]=1
-                
+                    AOS_List_boolean[j]=1     
             else:
-                # First Signal Acquisition of Signal    
+                # First Signal Acquisition of Signal 
+                
                 AZ_AOS.append(AZ_list[j])
                 EL_AOS.append(EL_list[j])
                 Times_AOS.append(time[j])
                 SatNum_AOS.append(Satnum_list[j])
                 Signal_lost_AOS.append(Signal_lost[j])
+                AOS_List_boolean[j]=1
+                
+                
+        #elif(j< Satnum_iteration):
+                #First Signal Acquisition of Signal    
+                #AZ_AOS.append(AZ_list[j])
+                #EL_AOS.append(EL_list[j])
+                #Times_AOS.append(time[j])
+                #SatNum_AOS.append(Satnum_list[j])
+                #Signal_lost_AOS.append(Signal_lost[j])
                 
                 
                 
@@ -927,7 +948,7 @@ def Visibility(StationInstance,AZ,EL,times,Satnum,Signal_lost):
     
     return Unique_AOS_LOS
     # In[]
-def SingalCalc(freq,Antennaeff,AntennaDia,R_ti):
+def SignalCalc(freq,Antennaeff,AntennaDia,R_ti):
     Signal_loss=[]
     DopplerShift_list=[]
     for i in range(0,len(R_ti)):
@@ -1041,7 +1062,7 @@ def Master_csvwriter(filename,AZ,EL,Rate_of_AZ,Rate_of_EL,Mean_anomaly,Mean_anom
                                  "Topocentric Reletive Velocity","Time","Time Since Epoch","Satellite Name","Avilable for View TRUE=1", \
                                      "Signal Acquired","Signal Lost"])
         for s in range(0,len(AZ)):
-           csv_writer.writerow([zTest_R_per[s],zTest_v_per[s],zTest_ECI_R[s],zTest_ECI_v[s],zTest_ECF_R[s],zTest_ECF_vel_rel[s],AZ[s],EL[s],Rate_of_AZ[s],Rate_of_EL[s],Mean_anomaly[s],Mean_anomaly_motion[s],zTest_Ecc_anom[s],R_ti[s],v_rel_ti[s],time[s],time_since_epoch_sec[s],SatList[Satnum[s]].name,Avail_list[s],AOS_List_boolean[s],LOS_List_boolean[s]])
+           csv_writer.writerow([zTest_R_per[s],zTest_v_per[s],zTest_ECI_R[s],zTest_ECI_v[s],zTest_ECF_R[s],zTest_ECF_vel_rel[s],np.rad2deg(AZ[s]),np.rad2deg(EL[s]),Rate_of_AZ[s],Rate_of_EL[s],Mean_anomaly[s],Mean_anomaly_motion[s],zTest_Ecc_anom[s],R_ti[s],v_rel_ti[s],time[s],time_since_epoch_sec[s],SatList[Satnum[s]].name,Avail_list[s],AOS_List_boolean[s],LOS_List_boolean[s]])
        
         csv_file.close    
         return 
@@ -1075,8 +1096,17 @@ def AZ_EL_csvwriter(filename,Satnum_avail,AZ_avail,EL_avail,Time_Avail):
         csv_file.close    
         return
 # In[]
-   
+def AOS_txtwriter(filename,AOS_LOS_List):
+    file=open(filename,"w+")
+    for i in range(0,len(AOS_LOS_List)):
+        file.write('{0:3} {1:6}\n'.format(float(AOS_LOS_List[0][i]),float(AOS_LOS_List[1][i])))
+        
+        return 
+# In[]
+def AZ_EL_txtwriter(filename,Satnum_avail,AZ_avail,EL_avail,Time_Avail):
     
+
+    return 
     # In[]
 
 def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,AZ_rate,EL_Rate,R_ti,v_rel_ti,Sat_dB,DopplerShift,InertialEpemFileName,FixedEphemFileName,spFileName,ControlFileName):
@@ -1143,7 +1173,7 @@ def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,A
     STKsp(sat_AZ,sat_EL,time_since_epoch_sec_sat,spFileName)
     
     
-    print ('\n UTC\t AZ (Deg) EL Deg AZ-Vel (deg/sec) El-Vel (deg/sec) Range (km)/sec) Doppler KHz Level dBm\n')
+    print ('\n UTC\t AZ (Deg) EL Deg AZ-Vel (deg/sec) El-Vel (deg/sec) Range (km) Doppler KHz Level dBm\n')
 #Outputting Tracking Data   
     for j in range(0,len(sat_time)):
         DOY_=doy(sat_time[j].year, sat_time[j].month, sat_time[j].day)
@@ -1194,12 +1224,18 @@ def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,A
  # In[]
 
 ##                  Calling Functions 
-# These functions largly control the inputs and outputs of the program. 
+    
+
+# These functions controls the inputs and outputs of the program. 
     #Edit Directories for control over the proper inputs and outputs of the program
 
-#Assuming That The Use has already initialized all necessary functions and classes
-# The Main Program can be deduced to this
-[StationInstance,SatList,Tracking,LinkData]=User_Input_parser_Call(r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6+\Input Files\Station.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6+\Input Files\gps-ops.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6+\Input Files\TrackingData.txt',r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6+\Input Files\LinkInputs.txt')
+
+
+[StationInstance,SatList,Tracking,LinkData]=User_Input_parser_Call\
+    (r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6+\Input Files\Station.txt'\
+     ,r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6+\Input Files\gps-ops.txt'\
+         ,r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6+\Input Files\TrackingData.txt'\
+             ,r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6+\Input Files\LinkInputs.txt')
 # This call function creates instances of each file that can be easily manipulated in Python.
 
 #This function calls upon the Satellite position velocity calculator functions
@@ -1207,13 +1243,12 @@ def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,A
 
 
 #Gathers Link Inputs and assigns them as variables
-[freq,Antennaeff,AntennaDia]=linkInputscall(r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6+\Input Files\LinkInputs.txt')
 #MHZ
 
 
 #Calculates Signal loss
-[Signal_loss,DopplerShift]=SingalCalc(freq,Antennaeff,AntennaDia,R_ti)
-#
+[Signal_loss,DopplerShift]=SignalCalc(LinkData.frequency,LinkData.Antennaeff,LinkData.AntennaDia,R_ti)
+
 
 
 
@@ -1226,6 +1261,7 @@ AOS_LOS_list=Visibility(StationInstance,AZ,EL,time,Satnum,Signal_loss)
 
 
 #Outputs CSV Files
+#makes Output File directory 
 os.makedirs(os.path.dirname("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/Master.csv"),exist_ok=True)
 
 #writing to a csv file
@@ -1233,6 +1269,11 @@ Master_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/Output
 AOS_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/AOS_LOS.csv",AOS_LOS_list)
 AZ_EL_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/AZ_EL.csv",Satnum_avail,AZ_avail,EL_avail,Times_avail)
 #Outputs AZ in Rads
+
+#Wrinting to a txt file
+
+#AOS_txtwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/AOS_LOS.txt",AOS_LOS_list)
+#AZ_EL_txtwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/AZ_EL.txt",Satnum_avail,AZ_avail,EL_avail,Times_avail)
 
 
 # Outputs STK files
