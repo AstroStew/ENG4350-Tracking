@@ -770,7 +770,17 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,Signal_lost):
         #compares Azimuth and Elevations to Limits
           
           #If TRUE, Satellite is Available in given Limitation block
+        
           
+        if (j< Satnum_iteration):
+                #If Satellite is available and j is under the Satellite number iteration number than we will consider this an acquisiton of signal
+                AZ_AOS.append(AZ_list[j])
+                EL_AOS.append(EL_list[j])
+                Times_AOS.append(time[j])
+                SatNum_AOS.append(Satnum_list[j])
+                Signal_lost_AOS.append(Signal_lost[j])
+                AOS_List_boolean[j]=1
+            
         
           #Compares to Previous Value
           # If previous value is not in limits but is now either AOS or from another limit iteration** 
@@ -908,25 +918,30 @@ def Visibility(StationInstance,AZ,EL,times,Satnum,Signal_lost):
     
     AOS_LOS_list=[]
     
+    AOS_LOS_list2=[[],[],[],[],[]]
+                
     
-            
     
-    
-    
+    counter=0
     for i in range(0,len(Satnum_AOS)):
         for j in range(0,len(Satnum_LOS)):
             
             if Satnum_AOS[i] == Satnum_LOS[j] and Sat_LOS_Time[j] >= Sat_AOS_Time[i] :
                 
                 Templist=[Satnum_AOS[i],SatList[Satnum_AOS[i]].name,Sat_AOS_Time[i],Sat_LOS_Time[j],Sat_Signal_Lost[i]]
+                
+                
                 #creates a temporary list to store Sat number,Sat list name ,AOS time,LOS time and 
                 AOS_LOS_list.append(Templist)
+    
+    
+    
     
 
         
     global Unique_AOS_LOS
     Unique_AOS_LOS=[[],[],[],[],[]]
-    
+    uniquepairlist=[]
    
     for i in range(0,len(AOS_LOS_list)):
         AOS_time=AOS_LOS_list[i][2]
@@ -934,7 +949,10 @@ def Visibility(StationInstance,AZ,EL,times,Satnum,Signal_lost):
         Satnum=AOS_LOS_list[i][0]
         LOS_time=AOS_LOS_list[i][3]
         Sat_Signal_Lost=AOS_LOS_list[i][4]
-        if AOS_time not in Unique_AOS_LOS[2]:
+        
+        uniquepair=str(Satname)+str(AOS_time)
+        
+        if (uniquepair) not in uniquepairlist :
             
             #creates a Unique List of AOS
             Unique_AOS_LOS[0].append(Satnum)
@@ -942,11 +960,41 @@ def Visibility(StationInstance,AZ,EL,times,Satnum,Signal_lost):
             Unique_AOS_LOS[2].append(AOS_time)
             Unique_AOS_LOS[3].append(LOS_time)
             Unique_AOS_LOS[4].append(Sat_Signal_Lost)
+            uniquepairlist.append(uniquepair)
             
             
     
     
     return Unique_AOS_LOS
+
+'''Temp_AOS_boolean=AOS_List_boolean
+    #we create temporary boolean lists to iterate through the AOS and LOS signals
+    Temp_LOS_boolean=LOS_List_boolean
+    for i in range (0,len((time))):
+        if (Temp_AOS_boolean[i]==1):
+            for j in range(0,len(times)):
+                if(Temp_LOS_boolean[j]==1 and Satnum[i]==Satnum[j] and time[j]>time[i]):
+                    #
+                    AppendList_=[Satnum[i],SatList[Satnum[i]].name,time[i],time[j],Signal_loss[i]]
+                    AOS_LOS_list.append(AppendList)
+                    
+                    #When a AOs and LOS pari has been established, they are revoked from the temporary boolean list 
+                    Temp_AOS_boolean[i]=0                
+                    Temp_LOS_boolean[j]=0
+                if(Satnum[i]==Satnum[j] and Avail_list[j]==1 and j==len(times)-1):
+                    #reached end of LOS list. output no LOS
+                    AppendList=[Satnum[i],SatList[Satnum[i]].name,time[i],"N/A",Signal_loss[i]]
+                    Temp_AOS_boolean[i]
+                    AOS_LOS_list.append(AppendList)
+                    
+                    
+                    
+                    
+                
+            
+    return AOS_LOS_list_
+
+'''
     # In[]
 def SignalCalc(freq,Antennaeff,AntennaDia,R_ti):
     Signal_loss=[]
@@ -1097,11 +1145,15 @@ def AZ_EL_csvwriter(filename,Satnum_avail,AZ_avail,EL_avail,Time_Avail):
         return
 # In[]
 def AOS_txtwriter(filename,AOS_LOS_List):
+    '''
     file=open(filename,"w+")
-    for i in range(0,len(AOS_LOS_List)):
-        file.write('{0:3} {1:6}\n'.format(float(AOS_LOS_List[0][i]),float(AOS_LOS_List[1][i])))
+    if(len(AOS_LOS_List[0])>0):
+        for i in range(0,len(AOS_LOS_List)):
+            file.write('{0:03.0} {1:6}\n'.format(float(AOS_LOS_List[0][i]),(AOS_LOS_List[1][i])))
+            '''
         
-        return 
+    return 
+        
 # In[]
 def AZ_EL_txtwriter(filename,Satnum_avail,AZ_avail,EL_avail,Time_Avail):
     
@@ -1272,8 +1324,8 @@ AZ_EL_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputF
 
 #Wrinting to a txt file
 
-#AOS_txtwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/AOS_LOS.txt",AOS_LOS_list)
-#AZ_EL_txtwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/AZ_EL.txt",Satnum_avail,AZ_avail,EL_avail,Times_avail)
+AOS_txtwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/AOS_LOS.txt",AOS_LOS_list)
+AZ_EL_txtwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/AZ_EL.txt",Satnum_avail,AZ_avail,EL_avail,Times_avail)
 
 
 # Outputs STK files
