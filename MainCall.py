@@ -4,6 +4,14 @@ Created on Sun Oct  4 18:54:39 2020
 
 @author: mstew
 """
+
+
+'''
+I've spent days on this code trying to debug and figure it out.
+Why are we expected to write an entire program when we've never used this language before
+
+
+'''
 ##                  Final Version 
 
 #
@@ -1138,9 +1146,9 @@ def Master_csvwriter(filename,AZ,EL,Rate_of_AZ,Rate_of_EL,Mean_anomaly,Mean_anom
         
         csv_writer=csv.writer(csv_file,delimiter=',',quotechar='"', quoting=csv.QUOTE_MINIMAL)
         csv_writer.writerow(["Perifocal Range","Perifocal Velocity","ECI Position","ECI_Velocity","ECF Position","ECF Velocity" \
-                             ,"Azimuth","Elevation","Rate of AZ","Rate of EL","Mean Anom @time","Mean Anom Motion @time","Eccentric Anomaly","Topocentric Range",\
-                                 "Topocentric Reletive Velocity","Time","Time Since Epoch","Satellite Name","Avilable for View TRUE=1", \
-                                     "Signal Acquired","Signal Lost","MinimumLevel(dBm)","SignalLoss(dB)","DopplerShift"])
+                             ,"Azimuth(deg)","Elevation(deg)","Rate of AZ(rads/s)","Rate of EL(rads/s)","Mean Anom @time","Mean Anom Motion @time","Eccentric Anomaly","Topocentric Range",\
+                                 "Topocentric Reletive Velocity","Time","Time Since Epoch(s)","Satellite Name","Avilable for View TRUE=1", \
+                                     "Signal Acquired","Signal Lost","Minimum Power Required(dBm)","Signal Loss(dB)","DopplerShift(Hertz)"])
         for s in range(0,len(AZ)):
            csv_writer.writerow([zTest_R_per[s],zTest_v_per[s],zTest_ECI_R[s]\
                                 ,zTest_ECI_v[s],zTest_ECF_R[s],zTest_ECF_vel_rel[s]\
@@ -1341,6 +1349,8 @@ def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,A
 
 
 
+
+
 [StationInstance,SatList,Tracking,LinkData]=User_Input_parser_Call\
     (r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6+\Input Files\Station.txt'\
      ,r'D:\School\5th Year Fall Semester\ESSE 4350\Tracking\P6+\Input Files\gps-ops.txt'\
@@ -1378,7 +1388,7 @@ os.makedirs(os.path.dirname("D:/School/5th Year Fall Semester/ESSE 4350/Tracking
 Master_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/Master.csv",AZ,EL,Rate_of_AZ,Rate_of_EL,zTest_Mt_Mean_anomaly,zTest_Nt_mean_anomaly_motion_rev_day,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean,MinimumLevel,Signal_loss,DopplerShift)
 AOS_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/AOS_LOS.csv",AOS_LOS_list)
 #Outputs AOS and LOS Data as CSV file
-AZ_EL_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/AZ_EL.csv",Satnum_avail,AZ_avail,EL_avail,Times_avail)
+AZ_EL_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/Avilable_Satellites_AZ_EL.csv",Satnum_avail,AZ_avail,EL_avail,Times_avail)
 #outputs an Azimuth and Elevation of Available Spacecraft
 
 #Outputs AZ in Rads
@@ -1394,7 +1404,7 @@ ChosenSat_Output_function(zTest_ECI_R,zTest_ECI_v,time,time_since_epoch_sec,Epoc
     
 #Writing to a txt file
 AOS_txtwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/AOS_LOS.txt",AOS_LOS_list)
-AZ_EL_txtwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/Satellite_AZ_EL.txt",AZ_EL_block)
+AZ_EL_txtwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/Chosen_Satellite_AZ_EL.txt",AZ_EL_block)
 #Outputs a desired Satellite Look Angles 
 
     
