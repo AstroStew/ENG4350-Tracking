@@ -1217,126 +1217,143 @@ def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,A
     
 
     val=input("Enter the Satellite Index to Output in .sp and .e file:")
-    print(SatList[int(val)].name, "Has been chosen")
-    Satnum_iteration=len(SatList)
     
-    sat_time=[]
-    time_since_epoch_sec_sat=[]
-    sat_position=[]
-    sat_velocity=[]
-    sat_position_ECF=[]
-    sat_velocity_ECF=[]
-    sat_AZ=[]
-    sat_EL=[]
-    sat_AZ_rate=[]
-    sat_EL_rate=[]
-    sat_Range=[]
-    sat_v_rel_ti=[]
-    sat_dB=[]
-    sat_DS=[]
-    
-    
-    for i in range(0,len(zTest_ECF_vel_rel)):
-        zTest_ECF_vel_rel[i]=zTest_ECF_vel_rel[i][:][0]
-    Num_of_iterations=len(time)/Satnum_iteration
-    for i in range(0,int(Num_of_iterations)):
-        #Iterates through time and timesince epoch for a specific Satellite
         
-        #This is done because the time and T_list for a specific sat is seperated by the lenght of a Satlist
+    if(int(val)<len(SatList)):
+     
+      
+        
+        print(SatList[int(val)].name, "Has been chosen")
+        Satnum_iteration=len(SatList)
+        
+        sat_time=[]
+        time_since_epoch_sec_sat=[]
+        sat_position=[]
+        sat_velocity=[]
+        sat_position_ECF=[]
+        sat_velocity_ECF=[]
+        sat_AZ=[]
+        sat_EL=[]
+        sat_AZ_rate=[]
+        sat_EL_rate=[]
+        sat_Range=[]
+        sat_v_rel_ti=[]
+        sat_dB=[]
+        sat_DS=[]
+        sat_avail=[]
         
         
-        #Here we gather oall the data corresponding to the selected Satellite
-        sat_time.append(time[int(val)+i*Satnum_iteration])
-        time_since_epoch_sec_sat.append(t_list[int(val)+i*Satnum_iteration])
-        sat_position.append(position[int(val)+i*Satnum_iteration])
-        sat_velocity.append(velocity[int(val)+i*Satnum_iteration])
-        sat_position_ECF.append(zTest_ECF_R[int(val)+i*Satnum_iteration])
-        sat_velocity_ECF.append(zTest_ECF_vel_rel[int(val)+i*Satnum_iteration])
-        sat_AZ.append((np.rad2deg(AZ[int(val)+i*Satnum_iteration])))
-        sat_EL.append((np.rad2deg(EL[int(val)+i*Satnum_iteration])))
-        sat_AZ_rate.append((np.rad2deg(AZ_rate[int(val)+i*Satnum_iteration])))
-        sat_EL_rate.append((np.rad2deg(EL_Rate[int(val)+i*Satnum_iteration])))
-        sat_Range.append((np.linalg.norm(R_ti[int(val)+i*Satnum_iteration])))
-        sat_v_rel_ti.append((np.linalg.norm(v_rel_ti[int(val)+i*Satnum_iteration])))
-        sat_dB.append((Sat_dB[int(val)+i*Satnum_iteration]))
-                                                
-        sat_DS.append((DopplerShift[int(val)+i*Satnum_iteration]/1000))
-
-
-
-# Outputting STK files
-        
-    #Change to right format    
-    EpochTimeString=dt.datetime.strftime(Epochdt_list[int(val)],"%d %b %Y %H:%M:%S")  
-    STKout(InertialEpemFileName,EpochTimeString,time_since_epoch_sec_sat,"Inertial",sat_position,sat_velocity)
-    
-    
-         
-    STKout(FixedEphemFileName,EpochTimeString,time_since_epoch_sec_sat,"Fixed",(sat_position_ECF),(sat_velocity_ECF))
-
-    STKsp(sat_AZ,sat_EL,time_since_epoch_sec_sat,spFileName)
-    
-    
-    print ('\n UTC\t AZ (Deg) EL Deg AZ-Vel (deg/sec) El-Vel (deg/sec) Range (km) Doppler KHz Level dBm\n')
-#Outputting Tracking Data
-    
-    global AZ_EL_block
-    AZ_EL_block=[]
-    AZ_EL_block.append(('\n UTC\t AZ (Deg) EL Deg AZ-Vel (deg/sec) El-Vel (deg/sec) Range (km) Doppler KHz Level dBm\n'))
-    
-    for j in range(0,len(sat_time)):
-        DOY_=doy(sat_time[j].year, sat_time[j].month, sat_time[j].day)
-        
-        print('{0:4.0f}{1:1}{2:3}{3:1}{4:8} {5:6.2f} {6: 6.2f} {7: 6.2f} {8: 6.2f}  {9:5.0f} {10: 7.3f} {11:3.0f} \n'\
-                       .format(sat_time[j].year,"-",DOY_,"-",sat_time[j].ctime()[11:19],sat_AZ[j],sat_EL[j],sat_AZ_rate[j],sat_EL_rate[j],sat_Range[j],sat_DS[j],sat_dB[j]))
-        AZ_EL_block.append('{0:4.0f}{1:1}{2:3}{3:1}{4:8} {5:5.2f} {6:5.2f} {7:5.2f} {8:5.2f}  {9:5.0f} {10: 7.3f} {11:3.0f} \n'\
-                       .format(sat_time[j].year,"-",DOY_,"-",sat_time[j].ctime()[11:19],sat_AZ[j],sat_EL[j],sat_AZ_rate[j],sat_EL_rate[j],sat_Range[j],sat_DS[j],sat_dB[j]))
-        
+        for i in range(0,len(zTest_ECF_vel_rel)):
+            zTest_ECF_vel_rel[i]=zTest_ECF_vel_rel[i][:][0]
+        Num_of_iterations=len(time)/Satnum_iteration
+        for i in range(0,int(Num_of_iterations)):
+            #Iterates through time and timesince epoch for a specific Satellite
+            
+            #This is done because the time and T_list for a specific sat is seperated by the lenght of a Satlist
             
             
-   # ,sat_AZ,sat_EL,sat_AZ_rate,sat_EL_rate,sat_Range,sat_v_rel_ti,sat_dB
+            #Here we gather oall the data corresponding to the selected Satellite
+            sat_time.append(time[int(val)+i*Satnum_iteration])
+            time_since_epoch_sec_sat.append(t_list[int(val)+i*Satnum_iteration])
+            sat_position.append(position[int(val)+i*Satnum_iteration])
+            sat_velocity.append(velocity[int(val)+i*Satnum_iteration])
+            sat_position_ECF.append(zTest_ECF_R[int(val)+i*Satnum_iteration])
+            sat_velocity_ECF.append(zTest_ECF_vel_rel[int(val)+i*Satnum_iteration])
+            sat_AZ.append((np.rad2deg(AZ[int(val)+i*Satnum_iteration])))
+            sat_EL.append((np.rad2deg(EL[int(val)+i*Satnum_iteration])))
+            sat_AZ_rate.append((np.rad2deg(AZ_rate[int(val)+i*Satnum_iteration])))
+            sat_EL_rate.append((np.rad2deg(EL_Rate[int(val)+i*Satnum_iteration])))
+            sat_Range.append((np.linalg.norm(R_ti[int(val)+i*Satnum_iteration])))
+            sat_v_rel_ti.append((np.linalg.norm(v_rel_ti[int(val)+i*Satnum_iteration])))
+            sat_dB.append((Sat_dB[int(val)+i*Satnum_iteration]))
+            sat_avail.append((Avail_list[int(val)+i*Satnum_iteration]))
+                                                    
+            sat_DS.append((DopplerShift[int(val)+i*Satnum_iteration]/1000))
     
     
     
+    # Outputting STK files
+            
+        #Change to right format    
+        EpochTimeString=dt.datetime.strftime(Epochdt_list[int(val)],"%d %b %Y %H:%M:%S")  
+        STKout(InertialEpemFileName,EpochTimeString,time_since_epoch_sec_sat,"Inertial",sat_position,sat_velocity)
+        
+        
+             
+        STKout(FixedEphemFileName,EpochTimeString,time_since_epoch_sec_sat,"Fixed",(sat_position_ECF),(sat_velocity_ECF))
     
-    TrackingDataYN=input("Is this data acceptable?(Y/N)")
-    if TrackingDataYN=='Y':
-        print('...Printing Control Data...')
+        STKsp(sat_AZ,sat_EL,time_since_epoch_sec_sat,spFileName)
         
+        print ("Avilable Satellites:")
+        print ('\n UTC\t AZ (Deg) EL Deg AZ-Vel (deg/sec) El-Vel (deg/sec) Range (km) Doppler KHz Level dBm\n')
+    #Outputting Tracking Data
         
-        file=open(ControlFileName,"w+")
+        global AZ_EL_block
+        AZ_EL_block=[]
+        AZ_EL_block.append(('\n UTC\t AZ (Deg) EL Deg AZ-Vel (deg/sec) El-Vel (deg/sec) Range (km) Doppler KHz Level dBm\n'))
         
-        
-        
-        #Writing Header
-        file.write("# ARO Control file - Authors Michael and Abdul. Satellite :")
-        file.write(SatList[int(val)].name)
-        
-        
-        
-        
-        
-    
-        for i in range(0,len(sat_time)):
-            DOY_=doy(sat_time[i].year, sat_time[i].month, sat_time[i].day)
-            #Claculates Day of Year for time instant
-            if (sat_EL[i]>0):
+        for j in range(0,len(sat_time)):
+            DOY_=doy(sat_time[j].year, sat_time[j].month, sat_time[j].day)
+            if(sat_avail[j]==1):
+            #prints and write AZ/EL
+                print('{0:4.0f}{1:1}{2:3}{3:1}{4:8} {5:6.2f} {6: 6.2f} {7: 6.2f} {8: 6.2f}  {9:5.0f} {10: 7.3f} {11:3.0f} \n'\
+                               .format(sat_time[j].year,"-",DOY_,"-",sat_time[j].ctime()[11:19],sat_AZ[j],sat_EL[j],sat_AZ_rate[j],sat_EL_rate[j],sat_Range[j],sat_DS[j],sat_dB[j]))
                 
-                file.write('{0:4.0f}{1:1}{2:3}{3:1}{4:8}  {5:03.0f} {6:02.0f} {7:04.1f} {8: 9.6f} {9:1}{10:02.0f} {11:02.0f}  {12:04.1f} {13: 9.6f}\n'\
-                       .format(sat_time[i].year,".",DOY_,".",sat_time[i].ctime()[11:19],int(sat_AZ[i]),(sat_AZ[i]*60)%60,\
-                           (sat_AZ[i]*3600)%60,sat_AZ_rate[i]," ",int(sat_EL[i]),(sat_EL[i]*60)%60,(sat_EL[i]*3600)%60,sat_EL_rate[i]))
-            else :
-                file.write('{0:4.0f}{1:1}{2:3}{3:1}{4:8}  {5:03.0f} {6:02.0f} {7:04.1f} {8: 9.6f} {9:1}{10:02.0f} {11:02.0f}  {12:04.1f} {13: 9.6f}\n'\
-                       .format(sat_time[i].year,".",DOY_,".",sat_time[i].ctime()[11:19],int(sat_AZ[i]),(sat_AZ[i]*60)%60,\
-                           (sat_AZ[i]*3600)%60,sat_AZ_rate[i],"-",int(-sat_EL[i]),(sat_EL[i]*60)%60,(sat_EL[i]*3600)%60,sat_EL_rate[i]))
-        # for i is in time, we iterate through the list to write in the values to the value
+                    
+                    
+                AZ_EL_block.append('{0:4.0f}{1:1}{2:3}{3:1}{4:8} {5:5.2f} {6:5.2f} {7:5.2f} {8:5.2f}  {9:5.0f} {10: 7.3f} {11:3.0f} \n'\
+                               .format(sat_time[j].year,"-",DOY_,"-",sat_time[j].ctime()[11:19],sat_AZ[j],sat_EL[j],sat_AZ_rate[j],sat_EL_rate[j],sat_Range[j],sat_DS[j],sat_dB[j]))
+            
+                
+                
+       # ,sat_AZ,sat_EL,sat_AZ_rate,sat_EL_rate,sat_Range,sat_v_rel_ti,sat_dB
+        
+        
+        
+        
+        TrackingDataYN=input("Is this data acceptable?(Y/N)")
+        if TrackingDataYN=='Y':
+            print('...Printing Control Data...')
             
             
-        #writing closer 
-        print('Done!')
-        file.close 
+            file=open(ControlFileName,"w+")
+            
+            
+            
+            #Writing Header
+            file.write("# ARO Control file - Authors Michael and Abdul. Satellite :")
+            file.write(SatList[int(val)].name)
+            
+            
+            
+            
+            
+        
+            for i in range(0,len(sat_time)):
+                DOY_=doy(sat_time[i].year, sat_time[i].month, sat_time[i].day)
+                #Claculates Day of Year for time instant
+                if (sat_avail[i]==1):
+                    if (sat_EL[i]>0):
+                        #Writes Tracking File
+                        file.write('{0:4.0f}{1:1}{2:3}{3:1}{4:8}  {5:03.0f} {6:02.0f} {7:04.1f} {8: 9.6f} {9:1}{10:02.0f} {11:02.0f}  {12:04.1f} {13: 9.6f}\n'\
+                               .format(sat_time[i].year,".",DOY_,".",sat_time[i].ctime()[11:19],int(sat_AZ[i]),(sat_AZ[i]*60)%60,\
+                                   (sat_AZ[i]*3600)%60,sat_AZ_rate[i]," ",int(sat_EL[i]),(sat_EL[i]*60)%60,(sat_EL[i]*3600)%60,sat_EL_rate[i]))
+                    else :
+                        file.write('{0:4.0f}{1:1}{2:3}{3:1}{4:8}  {5:03.0f} {6:02.0f} {7:04.1f} {8: 9.6f} {9:1}{10:02.0f} {11:02.0f}  {12:04.1f} {13: 9.6f}\n'\
+                               .format(sat_time[i].year,".",DOY_,".",sat_time[i].ctime()[11:19],int(sat_AZ[i]),(sat_AZ[i]*60)%60,\
+                                   (sat_AZ[i]*3600)%60,sat_AZ_rate[i],"-",int(-sat_EL[i]),(sat_EL[i]*60)%60,(sat_EL[i]*3600)%60,sat_EL_rate[i]))
+                # for i is in time, we iterate through the list to write in the values to the value
+                
+                
+            #writing closer 
+            print('Done!')
+            file.close 
+        else:
+            print("Okay Goodbye")
+        
+       
     else:
-        print("Okay Goodbye")
+        print("Error index out of range. Please restart")
     return
 
  # In[]
@@ -1385,10 +1402,10 @@ AOS_LOS_list=Visibility(StationInstance,AZ,EL,time,Satnum,MinimumLevel)
 os.makedirs(os.path.dirname("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/Master.csv"),exist_ok=True)
 
 #writing to a csv file
-Master_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/Master.csv",AZ,EL,Rate_of_AZ,Rate_of_EL,zTest_Mt_Mean_anomaly,zTest_Nt_mean_anomaly_motion_rev_day,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean,MinimumLevel,Signal_loss,DopplerShift)
-AOS_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/AOS_LOS.csv",AOS_LOS_list)
+Master_csvwriter("Master.csv",AZ,EL,Rate_of_AZ,Rate_of_EL,zTest_Mt_Mean_anomaly,zTest_Nt_mean_anomaly_motion_rev_day,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean,MinimumLevel,Signal_loss,DopplerShift)
+AOS_csvwriter("AOS_LOS.csv",AOS_LOS_list)
 #Outputs AOS and LOS Data as CSV file
-AZ_EL_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/Avilable_Satellites_AZ_EL.csv",Satnum_avail,AZ_avail,EL_avail,Times_avail)
+AZ_EL_csvwriter("Avilable_Satellites_AZ_EL.csv",Satnum_avail,AZ_avail,EL_avail,Times_avail)
 #outputs an Azimuth and Elevation of Available Spacecraft
 
 #Outputs AZ in Rads
@@ -1397,14 +1414,14 @@ AZ_EL_csvwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputF
 
 
 ChosenSat_Output_function(zTest_ECI_R,zTest_ECI_v,time,time_since_epoch_sec,Epochdt_list,AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,Signal_loss,DopplerShift,\
-                    'D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/EphemFileExampleInertial.e',\
-                        'D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/EphemFileExampleFixed.e',\
-                            "D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/STKSP.sp",\
-                                "D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/ControlFile.ascii")
+                    'EphemFileExampleInertial.e',\
+                        'EphemFileExampleFixed.e',\
+                            "STKSP.sp",\
+                                "ControlFile.ascii")
     
 #Writing to a txt file
-AOS_txtwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/AOS_LOS.txt",AOS_LOS_list)
-AZ_EL_txtwriter("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/Chosen_Satellite_AZ_EL.txt",AZ_EL_block)
+AOS_txtwriter("AOS_LOS.txt",AOS_LOS_list)
+AZ_EL_txtwriter("Chosen_Satellite_AZ_EL.txt",AZ_EL_block)
 #Outputs a desired Satellite Look Angles 
 
     
