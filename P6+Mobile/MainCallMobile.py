@@ -1211,6 +1211,16 @@ def AZ_EL_txtwriter(filename,AZ_EL_text_block):
             
 
     return 
+
+    # In[]
+def PrintAvailSatellite(Satnum_avail):
+    Avail_sats=[]
+    for i in Satnum_avail:
+        if i not in Avail_sats:
+            Avail_sats.append(i)
+            print ("SatAvailable",SatList[i].name)
+            
+    return 
     # In[]
 
 def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,AZ_rate,EL_Rate,R_ti,v_rel_ti,Sat_dB,DopplerShift,InertialEpemFileName,FixedEphemFileName,spFileName,ControlFileName):
@@ -1416,11 +1426,15 @@ AZ_EL_csvwriter("OUTPUT_Avilable_Satellites_AZ_EL.csv",Satnum_avail,AZ_avail,EL_
 #Outputs AZ in Rads
 
 
+#Lists Available Satellites on Command prompt
+PrintAvailSatellite(Satnum_avail)
 
 
+
+#Outputs Ephim, Pointing file, COntrol Fix
 ChosenSat_Output_function(zTest_ECI_R,zTest_ECI_v,time,time_since_epoch_sec,Epochdt_list,AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,Signal_loss,DopplerShift,\
-                    'OUPUT_EphemFileExampleInertial.e',\
-                        'OUTPUT_EphemFileExampleFixed.e',\
+                    'OUPUT_EphemFileInertial.e',\
+                        'OUTPUT_EphemFileixed.e',\
                             "OUTPUT_STKSP.sp",\
                                 "OUTPUT_ControlFile.ascii")
     
