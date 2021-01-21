@@ -3,6 +3,7 @@
 Created on Sun Oct  4 18:54:39 2020
 
 @author: mstew
+
 """
 
 
@@ -26,7 +27,6 @@ import numpy as np
 import math
 from scipy.spatial.transform import Rotation as R
 import csv
-import os
 
 
 #
@@ -73,7 +73,7 @@ def doy(YR,MO,D):
     
     # In[]
 # This creates a list of datetime objectas in the time_list
-def referenceepoch_propagate(TrackingData):
+def time_lister(TrackingData):
     
     
     
@@ -433,10 +433,10 @@ def range_ECF2topo(station_body_position, \
     R_ti=np.matmul(np.array(T_ECF_to_topo),np.array(R))
     
     # Assuming that sat_ecf Velocity is Relative
-    vel_rel=sat_ecf_velocity
+    vel_rel=((sat_ecf_velocity)[0])
     
     #Transform Velocity Vector
-    v_rel_ti=np.matmul(np.array(vel_rel),np.array(T_ECF_to_topo)).tolist()[0]
+    v_rel_ti=np.matmul(np.array(T_ECF_to_topo),np.array(vel_rel)).tolist()
     
     return R_ti,v_rel_ti
     # In[]
@@ -604,6 +604,7 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
     #Assuming that timesteps is in seconds 
     Time_iterations=(Time_end_dt-Time_start_dt).total_seconds()/float(Tracking.timestep)
     
+    global vel_rel_ti_list
     
     Time_dt=Time_start_dt
     #initializing empty arrays
@@ -626,9 +627,9 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
     a_list=[]
     
     #Propagtes data for THETAN
-    Refepoch=referenceepoch_propagate(Tracking)
+    Times=time_lister(Tracking)
         #THETAN has been edited to input time_start_dt and Time_dt
-    GMST=THETAN(Refepoch)
+    GMST=THETAN(Times)
     
     global zTest_GMST_List
     zTest_GMST_List=GMST
@@ -665,6 +666,7 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
         [R_ti,v_rel_ti]=range_ECF2topo([Tx,Ty,Tz],pos_ECF,vel_rel_ECF,StationInstance.stnlong,StationInstance.stnlat)
         
         
+        v_rel_ti_list.append(v_rel_ti)
         [AZ,EL,Rate_of_AZ,Rate_of_EL]=range_topo2look_angle(R_ti,v_rel_ti)
 
 
@@ -675,7 +677,7 @@ def Sat_pos_velCall(StationInstance,SatList,Tracking):
         Rate_of_AZ_list.append(Rate_of_AZ)
         Rate_of_EL_list.append(Rate_of_EL)
         R_ti_list.append(R_ti)
-        v_rel_ti_list.append(v_rel_ti)
+        
 
         time.append(Time_dt)
         
@@ -935,7 +937,7 @@ def Visibility(StationInstance,AZ,EL,times,Satnum,MinLevel):
     AOS_LOS_list2=[[],[],[],[],[]]
                 
     
-    
+    #Combines AOS and LOS signals in a pair 
     counter=0
     for i in range(0,len(Satnum_AOS)):
         for j in range(0,len(Satnum_LOS)):
@@ -988,6 +990,7 @@ def SignalCalc(LinkData,R_ti):
     DopplerShift_list=[]
     MinimumLevel_dBm=[]
     
+    
     freq=float(LinkData.frequency)*1e6 #now in Hertz
     n=float(LinkData.Antennaeff)
     d=float(LinkData.AntennaDia)
@@ -1005,11 +1008,11 @@ def SignalCalc(LinkData,R_ti):
         #output in km
         
         #speed of light
-        c=(2.998e+8)/1000 #m/s->km/s
+        c=(2.998e+8)
         
         DopplerShift_list.append(-v*float(freq)/c) 
         
-        #Minimumlevel to be added here
+        
         
         
         #Using link Budget Calculation
@@ -1017,10 +1020,11 @@ def SignalCalc(LinkData,R_ti):
         #Trasnmitter Gain
         A=np.pi/4*d**2 #Area of dish
         
-        #Trasmitter Gain
-        G_dBi_t=10*np.log10(n*4.*np.pi/freq**2*A)
         
-        Rq_EbNo=0.8 #Minum Required EbNo-- taken from AMSAT Excel file
+        #Trasmitter Gain
+        G_dBi_t=10*np.log10(n*4*np.pi/(3e8/(freq))**2*A)
+        
+        Rq_EbNo=9.6 #BPSK Required EbNo
         
         
         gT=10*np.log10(10**(R_gain/10)/T) #dB/K
@@ -1051,8 +1055,6 @@ def SignalCalc(LinkData,R_ti):
  
    
 
-    # In[]
-#       Debugging 
     
     
     # In[]
@@ -1214,11 +1216,18 @@ def AZ_EL_txtwriter(filename,AZ_EL_text_block):
 
     # In[]
 def PrintAvailSatellite(Satnum_avail):
+    #This function prints out a list of Satellites Available for Viewing in the Command Window
+    #Note that "Avilable for viewing" is defined as being available for viewing at anytime through the Observation period
+    
+    
     Avail_sats=[]
+    #Available Satellites Unique List
     for i in Satnum_avail:
         if i not in Avail_sats:
             Avail_sats.append(i)
-            print ("SatAvailable",SatList[i].name)
+            print ("Satellite Available for Viewing : ",SatList[i].name)
+            
+    
             
     return 
     # In[]
@@ -1270,7 +1279,7 @@ def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,A
             sat_position.append(position[int(val)+i*Satnum_iteration])
             sat_velocity.append(velocity[int(val)+i*Satnum_iteration])
             sat_position_ECF.append(zTest_ECF_R[int(val)+i*Satnum_iteration])
-            sat_velocity_ECF.append(zTest_ECF_vel_rel[int(val)+i*Satnum_iteration])
+            sat_velocity_ECF.append(zTest_ECF_vel[int(val)+i*Satnum_iteration])
             sat_AZ.append((np.rad2deg(AZ[int(val)+i*Satnum_iteration])))
             sat_EL.append((np.rad2deg(EL[int(val)+i*Satnum_iteration])))
             sat_AZ_rate.append((np.rad2deg(AZ_rate[int(val)+i*Satnum_iteration])))
@@ -1414,7 +1423,7 @@ AOS_LOS_list=Visibility(StationInstance,AZ,EL,time,Satnum,MinimumLevel)
 
 #Outputs CSV Files
 #makes Output File directory 
-#os.makedirs(os.path.dirname("D:/School/5th Year Fall Semester/ESSE 4350/Tracking/P6+/OutputFiles/Master.csv"),exist_ok=True)
+
 
 #writing to a csv file
 Master_csvwriter("OUTPUT_Master.csv",AZ,EL,Rate_of_AZ,Rate_of_EL,zTest_Mt_Mean_anomaly,zTest_Nt_mean_anomaly_motion_rev_day,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean,MinimumLevel,Signal_loss,DopplerShift)
@@ -1432,7 +1441,7 @@ PrintAvailSatellite(Satnum_avail)
 
 
 #Outputs Ephim, Pointing file, COntrol Fix
-ChosenSat_Output_function(zTest_ECI_R,zTest_ECI_v,time,time_since_epoch_sec,Epochdt_list,AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,Signal_loss,DopplerShift,\
+ChosenSat_Output_function(zTest_ECI_R,zTest_ECI_v,time,time_since_epoch_sec,Epochdt_list,AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,MinimumLevel,DopplerShift,\
                     'OUPUT_EphemFileInertial.e',\
                         'OUTPUT_EphemFileixed.e',\
                             "OUTPUT_STKSP.sp",\
