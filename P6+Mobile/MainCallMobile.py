@@ -800,7 +800,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,MinLevel_p):
       if AZ_list[j] > (AZ_muth_min) and AZ_muth_max > AZ_list[j] and (EL_lim_max) > EL_list[j] and EL_list[j] > (EL_lim_min):
         #compares Azimuth and Elevations to Limits
           
-          #If TRUE, Satellite is Available in given Limitation block- also called "Observation window"
+          #If TRUE, Satellite is Available in given Limitation block. Limitation Block also called "Observation window"
           
         
           
@@ -809,6 +809,7 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,MinLevel_p):
             #and j< Stanum iteration -> First set of observations in that observation window
             #We consider this first set of AOS if available since the Observatory never saw these Satellites before
             
+            #This is a Start Boundary Condition
             
                 #If Satellite is available and j is under the Satellite number iteration number than we will consider this an acquisiton of signal
                 AZ_AOS.append(AZ_list[j])
@@ -817,6 +818,21 @@ def Pointing(StnInstance,AZ_list,EL_list,time,Satnum_list,MinLevel_p):
                 SatNum_AOS.append(Satnum_list[j])
                 Min_lvl_AOS.append(MinLevel_p[j])
                 AOS_List_boolean[j]=1
+        if (i==int(StnInstance.az_el_nlim)-1) and (j>len(AZ_list)-Satnum_iteration):
+            
+            #If i==last Observation Limitation Block
+            #and j is the last of the Azimuths and Elevations to be compared,
+            #all available satellites will exhibit a LOS 
+            
+            
+            # End Boundary Condition
+            AZ_LOS.append(AZ_list[j])
+            EL_LOS.append(EL_list[j])
+            Times_LOS.append(time[j])
+            SatNum_LOS.append(Satnum_list[j])
+            Min_lvl_LOS.append(MinLevel_p[j])
+            LOS_List_boolean[j]=1
+            
             
         
           #Compares to Previous Value
