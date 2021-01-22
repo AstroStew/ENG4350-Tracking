@@ -6,13 +6,6 @@ Created on Sun Oct  4 18:54:39 2020
 
 """
 
-
-'''
-I've spent days on this code trying to debug and figure it out.
-Why are we expected to write an entire program when we've never used this language before
-
-
-'''
 ##                  Final Version 
 
 #
@@ -352,13 +345,27 @@ def sat_ECF(theta_t,eci_position,eci_velocity):
     
     
     #Relative Velocity
+    
+    
+    '''
+    Previous version
     Siderial_rotation=np.array([[0,0,0],[0,0,0],[0,0,360/86164.091]]) #Degrees/s
+    
     
     #vel_rel=ECI_to_ECF.apply(eci_velocity-np.matmul(Siderial_rotation,eci_position))
     vel_rel=np.matmul(ECI_to_ECF,eci_velocity-np.matmul(Siderial_rotation,eci_position)).tolist()
     #km/s
+    '''
     
-    
+    ''' 2nd attempt
+    Siderial_rotation=[0,0,360/86164.091]
+    vel_reference=np.dot(Siderial_rotation,eci_position)
+    vel_rel=np.dot(ECI_to_ECF,(eci_velocity-vel_reference))
+    '''
+    siderial_rotation=np.pi*2/86164.091
+    matrix=[[-math.sin(np.deg2rad(theta_t)),math.cos(np.deg2rad(theta_t)),0],\
+            [-math.cos(np.deg2rad(theta_t)),-math.sin(np.deg2rad(theta_t)),0],[0,0,0]]
+    vel_rel=np.matmul(ECI_to_ECF,eci_velocity)-(-siderial_rotation* (np.matmul(matrix,eci_position)))
     
     
     return pos_ECF,vel_ECF,vel_rel
@@ -396,7 +403,7 @@ def station_ECF(station_longitude,station_latitude,station_elevation):
     return [T_x,T_y,T_z]
     
     
-  #Note: Professor said that we did not have to do the second station_EFC fucntion
+  
     # In[]
 
 
@@ -447,8 +454,11 @@ def range_topo2look_angle(range_topo_position,range_topo_velocity):
     
     #Calculates the AZ and EL
     AZ=(np.arctan2(R[0],R[1])+2*math.pi)%(2*math.pi)
+    #output in radians
+    
     #AZ=np.arctan2(R[0],R[1])
     EL=math.atan(R[2]/(math.sqrt(R[0]**2+R[1]**2))) #Range is 0->90
+    #outputs in radians
     
     
     r=np.linalg.norm(R) #scalar of R
@@ -461,6 +471,7 @@ def range_topo2look_angle(range_topo_position,range_topo_velocity):
     #Calculates rates of AZ and EL
     rate_of_AZ=np.cross(v_xy,R_xy)/((np.linalg.norm(R_xy))**2)
     rate_of_EL=(r*v_rel[2]-R[2]*np.dot(R_xy,v_xy)/r)/(r**2)
+    #rate_of_EL=(np.linalg.norm(R_xy)*v_rel[2]-R[2]*np.dot(R_xy,v_xy)/(np.linalg.norm(R_xy)))/(r**2)
     
     return AZ,EL,rate_of_AZ,rate_of_EL
 
@@ -989,6 +1000,7 @@ def SignalCalc(LinkData,R_ti):
     Signal_loss=[]
     DopplerShift_list=[]
     MinimumLevel_dBm=[]
+    Minimum_Received_power_list=[]
     
     
     freq=float(LinkData.frequency)*1e6 #now in Hertz
@@ -1008,11 +1020,9 @@ def SignalCalc(LinkData,R_ti):
         #output in km
         
         #speed of light
-        c=(2.998e+8)
+        c=(2.998e+8)/1000 #m/s-> km/s
         
         DopplerShift_list.append(-v*float(freq)/c) 
-        
-        
         
         
         #Using link Budget Calculation
@@ -1040,17 +1050,21 @@ def SignalCalc(LinkData,R_ti):
         #solve for PdBW
         #EbNo-L_1-G_dBi_t-L_s-gT-R-k_dB=PdBW
         
-        Minlvl=Rq_EbNo-G_dBi_t-L_s-gT-R_dB-k_dB #gives minimum Power Required in dBW
+        Xmtr_pwr_dBW=Rq_EbNo-G_dBi_t-L_s-gT-R_dB-k_dB #gives minimum Power Required in dBW
         
-        Minlvl_dBm=Minlvl+30 #Covnerts from dBW to dBm
-        
-        
-        
-        MinimumLevel_dBm.append(Minlvl_dBm)
+        Xmtr_pwr_dBm=Xmtr_pwr_dBW+30 #Covnerts from dBW to dBm
         
         
+        MinRcvdPower=Xmtr_pwr_dBW+G_dBi_t+R_gain+L_s #Calculates Received Power in dbW
+        Minimum_Received_power_list.append(MinRcvdPower+30) #converts to dBm then appends it to lsit
+            # I only know how to use lists, can't you tell?
+
         
-    return MinimumLevel_dBm,Signal_loss,DopplerShift_list
+        MinimumLevel_dBm.append(Xmtr_pwr_dBm)
+        
+        
+        
+    return MinimumLevel_dBm,Signal_loss,DopplerShift_list,Minimum_Received_power_list
 
  
    
@@ -1101,13 +1115,10 @@ def STKout(EphemFile,Epochtime,time,Coord,position,velocity):
     i=0
     for i in range(0,len(time)):
         
-        file_1.write('{0:15.14e} {1:15.14e} {2:15.14e} {3:15.14e} {4:15.14e} {5:15.14e} {6:15.14e} \n'.format(float(time[i]),float(X[i]),float(Y[i]),float(Z[i]),float(X_dot[i]),float(Y_dot[i]),float(Z_dot[i])))
+        file_1.write('{0:15.14e} {1:15.14e} {2:15.14e} {3:15.14e} {4:15.14e} {5:15.14e} {6:15.14e} \n'.format(float(time[i]),float(X[i])\
+                         ,float(Y[i]),float(Z[i]),float(X_dot[i]),float(Y_dot[i])\
+                             ,float(Z_dot[i])))
         #writing to file in formatted way
-        
-        
-        
-        # for i is in time, we iterate through the list to write in the values to the value
-        i=i+1
         
     file_1.write("\n\nEND Ephemeris")
     file_1.close()
@@ -1143,14 +1154,14 @@ def STKsp(AZ,EL,time,SpFile):
         
         # In[]
 #This function write the Mater.csv file which is used extensively for Debugging
-def Master_csvwriter(filename,AZ,EL,Rate_of_AZ,Rate_of_EL,Mean_anomaly,Mean_anomaly_motion,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean,MinimumLevel,SignalLoss,DopplerShift):
+def Master_csvwriter(filename,AZ,EL,Rate_of_AZ,Rate_of_EL,Mean_anomaly,Mean_anomaly_motion,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean,MinimumLevel,SignalLoss,DopplerShift,MinRcvdPower):
     with open(filename,mode='w+',newline='') as csv_file:
         
         csv_writer=csv.writer(csv_file,delimiter=',',quotechar='"', quoting=csv.QUOTE_MINIMAL)
         csv_writer.writerow(["Perifocal Range","Perifocal Velocity","ECI Position","ECI_Velocity","ECF Position","ECF Velocity" \
                              ,"Azimuth(deg)","Elevation(deg)","Rate of AZ(rads/s)","Rate of EL(rads/s)","Mean Anom @time","Mean Anom Motion @time","Eccentric Anomaly","Topocentric Range",\
                                  "Topocentric Reletive Velocity","Time","Time Since Epoch(s)","Satellite Name","Avilable for View TRUE=1", \
-                                     "Signal Acquired","Signal Lost","Minimum Power Required(dBm)","Signal Loss(dB)","DopplerShift(Hertz)"])
+                                     "Signal Acquired","Signal Lost","Minimum Power Required(dBm)","Signal Loss(dB)","DopplerShift(Hertz)","Minimul Received Power (dBm)"])
         for s in range(0,len(AZ)):
            csv_writer.writerow([zTest_R_per[s],zTest_v_per[s],zTest_ECI_R[s]\
                                 ,zTest_ECI_v[s],zTest_ECF_R[s],zTest_ECF_vel_rel[s]\
@@ -1159,7 +1170,7 @@ def Master_csvwriter(filename,AZ,EL,Rate_of_AZ,Rate_of_EL,Mean_anomaly,Mean_anom
                                             ,zTest_Ecc_anom[s],R_ti[s],v_rel_ti[s],time[s]\
                                                 ,time_since_epoch_sec[s],SatList[Satnum[s]].name\
                                                     ,Avail_list[s],AOS_List_boolean[s],LOS_List_boolean[s],\
-                                                        MinimumLevel[s],SignalLoss[s],DopplerShift[s]])
+                                                        MinimumLevel[s],SignalLoss[s],DopplerShift[s],MinRcvdPower[s]])
        
         csv_file.close    
         return 
@@ -1408,8 +1419,8 @@ def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,A
 
 
 #Calculates Signal loss, Doppler Shift and Minimum Level
-[MinimumLevel,Signal_loss,DopplerShift]=SignalCalc(LinkData,R_ti)
-#Minimum Level in dBm, Signal Loss in dB, Doppler Shift is in Hertz
+[MinXmtrPwr,Signal_loss,DopplerShift,MinRcvdPwr]=SignalCalc(LinkData,R_ti)
+#Minimum Level in dBm, Signal Loss in dB, Doppler Shift is in Hertz, MinRcvPower in dBm
 
 
 
@@ -1418,7 +1429,7 @@ def ChosenSat_Output_function(position,velocity,time,t_list,Epochdt_list,AZ,EL,A
 [AZ_avail,EL_avail,Times_avail,Satnum_avail,AOS_List,LOS_List]=Pointing(StationInstance,AZ,EL,time,Satnum,Signal_loss)
 
 #Visibility creates a formatted list 
-AOS_LOS_list=Visibility(StationInstance,AZ,EL,time,Satnum,MinimumLevel)
+AOS_LOS_list=Visibility(StationInstance,AZ,EL,time,Satnum,MinRcvdPwr)
 
 
 #Outputs CSV Files
@@ -1426,7 +1437,7 @@ AOS_LOS_list=Visibility(StationInstance,AZ,EL,time,Satnum,MinimumLevel)
 
 
 #writing to a csv file
-Master_csvwriter("OUTPUT_Master.csv",AZ,EL,Rate_of_AZ,Rate_of_EL,zTest_Mt_Mean_anomaly,zTest_Nt_mean_anomaly_motion_rev_day,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean,MinimumLevel,Signal_loss,DopplerShift)
+Master_csvwriter("OUTPUT_Master.csv",AZ,EL,Rate_of_AZ,Rate_of_EL,zTest_Mt_Mean_anomaly,zTest_Nt_mean_anomaly_motion_rev_day,R_ti,v_rel_ti,time,Satnum,Avail_list,AOS_List_boolean,LOS_List_boolean,MinXmtrPwr,Signal_loss,DopplerShift,MinRcvdPwr)
 AOS_csvwriter("OUTPUT_AOS_LOS.csv",AOS_LOS_list)
 #Outputs AOS and LOS Data as CSV file
 AZ_EL_csvwriter("OUTPUT_Avilable_Satellites_AZ_EL.csv",Satnum_avail,AZ_avail,EL_avail,Times_avail)
@@ -1441,7 +1452,7 @@ PrintAvailSatellite(Satnum_avail)
 
 
 #Outputs Ephim, Pointing file, COntrol Fix
-ChosenSat_Output_function(zTest_ECI_R,zTest_ECI_v,time,time_since_epoch_sec,Epochdt_list,AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,MinimumLevel,DopplerShift,\
+ChosenSat_Output_function(zTest_ECI_R,zTest_ECI_v,time,time_since_epoch_sec,Epochdt_list,AZ,EL,Rate_of_AZ,Rate_of_EL,R_ti,v_rel_ti,MinRcvdPwr,DopplerShift,\
                     'OUPUT_EphemFileInertial.e',\
                         'OUTPUT_EphemFileixed.e',\
                             "OUTPUT_STKSP.sp",\
