@@ -21,6 +21,7 @@ Inputs are in File called "Reference Files"
 
 #### Documentaiton Issues:
 - Tracking Program Docuementation needs to be broght up from Lab06+ Mobile files
+- Software Specifications Document needs to be brough up from Lab03 files
 - Lab06+ contains two programs Lab06+ 'standard' and 'mobile'
   - 'standard' does not contain correct Rate values and posses other issues
   - 'mobile' needs to be renamed 'Lab06+ Version 1.2'
